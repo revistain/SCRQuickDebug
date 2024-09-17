@@ -1,4 +1,5 @@
 #include "eud.h"
+#include "signature.h"
 #include <windows.h>
 #include <tlhelp32.h>
 #include <iostream>
@@ -39,71 +40,6 @@ bool OpenTargetProcess(DWORD processID) {
     }
     return true;
 }
-
-// Boyer-Moore-Horspool 알고리즘을 사용한 패턴 검색 함수
-std::vector<size_t> BuildBMHTable(const std::vector<uint8_t>& pattern) {
-    std::vector<size_t> bmhTable(256, pattern.size());
-    for (size_t i = 0; i < pattern.size() - 1; ++i) {
-        bmhTable[pattern[i]] = pattern.size() - 1 - i;
-    }
-    return bmhTable;
-}
-
-const uint8_t* BMHSearch(const uint8_t* data, size_t dataSize, const std::vector<uint8_t>& pattern, const std::vector<size_t>& bmhTable) {
-    size_t patternSize = pattern.size();
-    size_t i = 0;
-
-    while (i <= dataSize - patternSize) {
-        int j = patternSize - 1;
-        while (j >= 0 && data[i + j] == pattern[j]) {
-            --j;
-        }
-        if (j < 0) {
-            return data + i; // 패턴을 찾음
-        }
-        i += bmhTable[data[i + patternSize - 1]];
-    }
-
-    return nullptr;
-}
-
-// 메모리 페이지 단위로 패턴을 찾는 함수 (BMH 알고리즘 사용)
-uint32_t FindPatternInMemory(HANDLE hProcess, const std::vector<uint8_t>& pattern) {
-    SYSTEM_INFO sysInfo;
-    GetSystemInfo(&sysInfo);
-
-    MEMORY_BASIC_INFORMATION mbi;
-    void* currentAddress = sysInfo.lpMinimumApplicationAddress;
-
-    // BMH 테이블 생성
-    auto bmhTable = BuildBMHTable(pattern);
-
-    while (currentAddress < sysInfo.lpMaximumApplicationAddress) {
-        if (VirtualQueryEx(hProcess, currentAddress, &mbi, sizeof(mbi))) {
-            if (mbi.State == MEM_COMMIT && (mbi.Protect & (PAGE_READWRITE | PAGE_READONLY | PAGE_EXECUTE_READ))) {
-                std::vector<uint8_t> buffer(mbi.RegionSize);
-
-                // 프로세스 메모리 읽기
-                SIZE_T bytesRead;
-                if (ReadProcessMemory(hProcess, mbi.BaseAddress, buffer.data(), mbi.RegionSize, &bytesRead)) {
-                    // BMH 알고리즘으로 패턴 검색
-                    const uint8_t* foundAddress = BMHSearch(buffer.data(), bytesRead, pattern, bmhTable);
-                    if (foundAddress) {
-                        size_t offset = foundAddress - buffer.data();
-                        return reinterpret_cast<uint32_t>(mbi.BaseAddress) + offset;
-                    }
-                }
-            }
-            currentAddress = static_cast<uint8_t*>(mbi.BaseAddress) + mbi.RegionSize;
-        }
-        else {
-            break;
-        }
-    }
-
-    return 0;
-}
-
 
 // Function to read a block of memory from the process
 bool ReadMemory(LPCVOID address, SIZE_T length, BYTE* buffer) {
@@ -196,10 +132,10 @@ uint32_t find_signature_address() {
     // Define the signature to search for
     std::string signature_str = "GongjknOSDIfnwlnlSNDKlnfkopqfnkLDNSFpwIn";
     std::vector<uint8_t> signature = StringToByteVector(signature_str);
-    MEMORY_BASIC_INFORMATION mbi;
     //LPVOID address = reinterpret_cast<LPVOID>(0xFFFFFFFF); // Start from the top of the memory space
-    uint32_t found_address = FindPatternInMemory(hProcess, signature);
-    std::cout << "found: 0x" << std::hex << found_address << "\n";
+    searchMemory(hProcess, signature, 4);
+    //std::cout << "END sfound: 0x" << std::hex << found_address << "\n";
+    //if (found_address) return found_address;
     CloseHandle(hProcess);
     return 0;
 }

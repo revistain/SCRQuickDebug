@@ -1,12 +1,2 @@
-﻿  dll_main.cpp
-C:\Users\robin\source\repos\dll_main\dll_main\section.h(1,1): warning C4005: '_CRT_SECURE_NO_WARNINGS': 매크로 재정의
-C:\Users\robin\source\repos\dll_main\dll_main\section.h(1,1): message : 이전에 명령줄에서 선언된 '_CRT_SECURE_NO_WARNINGS'
-C:\Users\robin\source\repos\dll_main\dll_main\dll_main.cpp(11,21): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
-C:\Users\robin\source\repos\dll_main\dll_main\dll_main.cpp(16,21): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
-C:\Users\robin\source\repos\dll_main\dll_main\dll_main.cpp(32,9): warning C4101: 'packet' :참조되지 않은 지역 변수입니다.
-  packet.cpp
-  signature.cpp
-C:\Users\robin\source\repos\dll_main\dll_main\signature.cpp(173,30): warning C4101: 'mbi' :참조되지 않은 지역 변수입니다.
-  variable.cpp
-  코드를 생성하고 있습니다...
+﻿  signature.cpp
   dll_main.vcxproj -> C:\Users\robin\source\repos\dll_main\Debug\dll_main.exe

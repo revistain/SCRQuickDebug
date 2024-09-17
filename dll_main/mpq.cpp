@@ -108,7 +108,6 @@ bool extractMPQ() {
         mr.open("C:\\Users\\robin\\OneDrive\\¹®¼­\\StarCraft\\Maps\\Download\\qwer\\test_eud.scx");
         mr.extractChk();
         mr.parseChk();
-        system("pause");
         return true;
     }
     catch (const std::runtime_error& e) {

@@ -1,5 +1,6 @@
 #ifndef SIGNATURE_H
 #define SIGNATURE_H
+#include "pattern.h"
 #include <windows.h>
 #include <tlhelp32.h>
 #include <iostream>

@@ -139,6 +139,7 @@
     <ClCompile Include="encoding.cpp" />
     <ClCompile Include="eud.cpp" />
     <ClCompile Include="packet.cpp" />
+    <ClCompile Include="pattern.cpp" />
     <ClCompile Include="section.cpp" />
     <ClCompile Include="signature.cpp" />
     <ClCompile Include="variable.cpp" />
@@ -149,6 +150,7 @@
     <ClInclude Include="eud.h" />
     <ClInclude Include="mpq.h" />
     <ClInclude Include="packet.h" />
+    <ClInclude Include="pattern.h" />
     <ClInclude Include="section.h" />
     <ClInclude Include="signature.h" />
     <ClInclude Include="variable.h" />
