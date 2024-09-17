@@ -12,6 +12,8 @@ uint32_t packet_address;
 uint32_t func_table_address;
 uint32_t var_table_address;
 uint32_t var_data_address;
+uint32_t mrgn_table_address;
+uint32_t mrgn_data_address;
 
 HANDLE getProcessHandle() { return hProcess; }
 uint32_t getSignatureAddr() { return signature_address; }
@@ -20,6 +22,8 @@ uint32_t getPacketAddr() { return packet_address; }
 uint32_t getFuncTableAddr() { return func_table_address; }
 uint32_t getVarTableAddr() { return var_table_address; }
 uint32_t getVarDataAddr() { return var_data_address; }
+uint32_t getMRGNTableAddr() { return mrgn_table_address; }
+uint32_t getMRGNDataAddr() { return mrgn_data_address; }
 
 // Function to convert a string to a vector of bytes
 std::vector<uint8_t> StringToByteVector(const std::string& str) {
@@ -35,9 +39,35 @@ bool OpenTargetProcess(DWORD processID) {
     }
     return true;
 }
-#include <algorithm>
 
-// 메모리 페이지 단위로 패턴을 찾는 함수
+// Boyer-Moore-Horspool 알고리즘을 사용한 패턴 검색 함수
+std::vector<size_t> BuildBMHTable(const std::vector<uint8_t>& pattern) {
+    std::vector<size_t> bmhTable(256, pattern.size());
+    for (size_t i = 0; i < pattern.size() - 1; ++i) {
+        bmhTable[pattern[i]] = pattern.size() - 1 - i;
+    }
+    return bmhTable;
+}
+
+const uint8_t* BMHSearch(const uint8_t* data, size_t dataSize, const std::vector<uint8_t>& pattern, const std::vector<size_t>& bmhTable) {
+    size_t patternSize = pattern.size();
+    size_t i = 0;
+
+    while (i <= dataSize - patternSize) {
+        int j = patternSize - 1;
+        while (j >= 0 && data[i + j] == pattern[j]) {
+            --j;
+        }
+        if (j < 0) {
+            return data + i; // 패턴을 찾음
+        }
+        i += bmhTable[data[i + patternSize - 1]];
+    }
+
+    return nullptr;
+}
+
+// 메모리 페이지 단위로 패턴을 찾는 함수 (BMH 알고리즘 사용)
 uint32_t FindPatternInMemory(HANDLE hProcess, const std::vector<uint8_t>& pattern) {
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
@@ -45,26 +75,25 @@ uint32_t FindPatternInMemory(HANDLE hProcess, const std::vector<uint8_t>& patter
     MEMORY_BASIC_INFORMATION mbi;
     void* currentAddress = sysInfo.lpMinimumApplicationAddress;
 
+    // BMH 테이블 생성
+    auto bmhTable = BuildBMHTable(pattern);
+
     while (currentAddress < sysInfo.lpMaximumApplicationAddress) {
-        // 메모리 페이지 정보 가져오기
         if (VirtualQueryEx(hProcess, currentAddress, &mbi, sizeof(mbi))) {
-            // 메모리 페이지가 커밋 상태인지 확인 (읽기 가능한 페이지)
             if (mbi.State == MEM_COMMIT && (mbi.Protect & (PAGE_READWRITE | PAGE_READONLY | PAGE_EXECUTE_READ))) {
                 std::vector<uint8_t> buffer(mbi.RegionSize);
 
                 // 프로세스 메모리 읽기
                 SIZE_T bytesRead;
                 if (ReadProcessMemory(hProcess, mbi.BaseAddress, buffer.data(), mbi.RegionSize, &bytesRead)) {
-                    // 검색할 메모리 범위에서 패턴 검색
-                    auto it = std::search(buffer.begin(), buffer.begin() + bytesRead, pattern.begin(), pattern.end());
-                    if (it != buffer.end()) {
-                        // 패턴을 찾은 경우, 해당 메모리 주소를 반환
-                        size_t offset = std::distance(buffer.begin(), it);
+                    // BMH 알고리즘으로 패턴 검색
+                    const uint8_t* foundAddress = BMHSearch(buffer.data(), bytesRead, pattern, bmhTable);
+                    if (foundAddress) {
+                        size_t offset = foundAddress - buffer.data();
                         return reinterpret_cast<uint32_t>(mbi.BaseAddress) + offset;
                     }
                 }
             }
-            // 다음 페이지로 이동
             currentAddress = static_cast<uint8_t*>(mbi.BaseAddress) + mbi.RegionSize;
         }
         else {
@@ -74,6 +103,7 @@ uint32_t FindPatternInMemory(HANDLE hProcess, const std::vector<uint8_t>& patter
 
     return 0;
 }
+
 
 // Function to read a block of memory from the process
 bool ReadMemory(LPCVOID address, SIZE_T length, BYTE* buffer) {
@@ -182,6 +212,8 @@ void init_signature() {
         func_table_address = dwread(signature_address + 48);
         var_table_address = dwread(signature_address + 52);
         var_data_address = dwread(signature_address + 56);
+        mrgn_table_address = dwread(signature_address + 60);
+        mrgn_data_address = dwread(signature_address + 64);
         std::cout << "base_address: 0x" << std::hex << packet_address << std::endl;
     }
     else {

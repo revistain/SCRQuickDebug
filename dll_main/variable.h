@@ -18,14 +18,18 @@ class StringTable {
 public:
 	std::vector<std::string> func_str;
 	std::vector<std::string> var_str;
-	StringTable(std::string& func_data, std::string& var_data);
+	std::vector<std::string> loc_str;
+	StringTable(std::string& func_data, std::string& var_data, std::string& loc_data);
 };
 
 class Variables {
 public:
 	StringTable strtable;
 	std::vector<EUDVariable> eudvars;
-	Variables(std::string& func_data, std::string& var_data, std::string& data);
+	std::vector<std::string> Locations;
+
+	Variables(std::string& func_data, std::string& var_data,
+		std::string& loc_data, std::string& vdata, std::string& mdata);
 	void update_value();
 };
 

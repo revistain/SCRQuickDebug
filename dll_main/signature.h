@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <algorithm>
 
 void init_signature();
 void end_signature();
@@ -15,7 +16,9 @@ uint32_t getBaseAddr();
 uint32_t getPacketAddr();
 uint32_t getFuncTableAddr();
 uint32_t getVarTableAddr();
-uint32_t getVarDataAddr();
+uint32_t getVarDataAddr(); 
+uint32_t getMRGNTableAddr();
+uint32_t getMRGNDataAddr();
 
 std::string strread(uint32_t address, size_t size);
 uint32_t dwread(uint32_t address);

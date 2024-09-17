@@ -13,6 +13,9 @@ int main() {
 				"\tvar: " << vars.strtable.var_str[vars.eudvars[i].var_index] <<
 				"\taddr: 0x" << std::hex << getBaseAddr() + vars.eudvars[i].address << std::endl;
 		}
+		for (int i = 0; i < vars.Locations.size(); i++) {
+			std::cout << "loc " << i+1 << ": " << vars.Locations[i] << std::endl;
+		}
 
 		while (1) {
 			vars.update_value();
