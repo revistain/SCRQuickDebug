@@ -3,6 +3,9 @@
 
 # by me
 /*.vs
+/Debug
+/x64/Debug
+/Release
 *.pdb
 
 # Compiled Object files
