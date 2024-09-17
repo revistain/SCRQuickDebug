@@ -1,0 +1,3 @@
+﻿  signature.cpp
+C:\Users\robin\source\repos\dll_main\dll_main\signature.cpp(169,30): warning C4101: 'mbi' :참조되지 않은 지역 변수입니다.
+  dll_main.vcxproj -> C:\Users\robin\source\repos\dll_main\Debug\dll_main.exe

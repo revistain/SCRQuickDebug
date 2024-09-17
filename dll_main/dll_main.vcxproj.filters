@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="소스 파일\scenariochk">
+      <UniqueIdentifier>{7cffc955-589b-48b3-a834-4dec00f7500e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\debugger">
+      <UniqueIdentifier>{0c2037e4-226a-4a9d-a1ee-655cd36d4271}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="variable.cpp">
+      <Filter>소스 파일\debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="dll_main.cpp">
+      <Filter>소스 파일\debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="eud.cpp">
+      <Filter>소스 파일\debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="packet.cpp">
+      <Filter>소스 파일\debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="signature.cpp">
+      <Filter>소스 파일\debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="encoding.cpp">
+      <Filter>소스 파일\scenariochk</Filter>
+    </ClCompile>
+    <ClCompile Include="mpq.cpp">
+      <Filter>소스 파일\scenariochk</Filter>
+    </ClCompile>
+    <ClCompile Include="section.cpp">
+      <Filter>소스 파일\scenariochk</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="signature.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="eud.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="packet.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="variable.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="encoding.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="mpq.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="section.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
