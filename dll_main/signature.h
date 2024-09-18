@@ -25,4 +25,9 @@ std::string strread(uint32_t address, size_t size);
 uint32_t dwread(uint32_t address);
 uint16_t wread(uint32_t address);
 uint8_t bread(uint32_t address);
+bool dwwrite(uint32_t address, uint32_t value);
+bool wwrite(uint32_t address, uint16_t value);
+bool bwrite(uint32_t address, uint8_t value);
+bool vecwrite(uint32_t address, std::vector<uint8_t> value);
+
 #endif

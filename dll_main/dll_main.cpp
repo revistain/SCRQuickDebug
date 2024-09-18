@@ -17,6 +17,7 @@ int main() {
 			if(vars.Locations[i] != "") std::cout << std::dec << "loc " << i + 1 << ": " << vars.Locations[i] << std::endl;
 		}
 
+		/*
 		while (1) {
 			vars.update_value();
 			for (auto& var : vars.eudvars) {
@@ -25,10 +26,13 @@ int main() {
 			}
 			system("pause");
 		}
+		*/
+		while (1) {
+			process_packets();
+			system("pause");
+		}
 	}
 	catch (const char* e) {
 		std::cout << e << std::endl;
 	}
-	Packet packet;
-	//readPacket(packet, getBaseAddr() + getPacketAddr() + 12);
 }

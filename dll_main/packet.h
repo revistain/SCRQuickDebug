@@ -3,21 +3,18 @@
 #include "signature.h"
 #include <utility>
 #include <iostream>
-#include <windows.h>
-#include <tlhelp32.h>
 #include <vector>
 #include <string>
+#include <cmath>
 
 typedef struct {
-	uint16_t opCode	: 2;
-	uint16_t count	: 2;
-	uint32_t param1 : 4;
-	uint32_t param2 : 4;
-	uint32_t param3 : 4;
-	uint32_t mask	: 4;
+	uint16_t opCode	: 16;
+	uint16_t count	: 16;
+	uint32_t param1 : 32;
+	uint32_t param2 : 32;
+	uint32_t param3 : 32;
+	uint32_t mask	: 32;
 }Packet;
 
-std::vector<Packet> packets;
-
-void readPacket(Packet& packet, uint32_t address);
+void process_packets();
 #endif

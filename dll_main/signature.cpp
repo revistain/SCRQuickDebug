@@ -26,12 +26,10 @@ uint32_t getVarDataAddr() { return var_data_address; }
 uint32_t getMRGNTableAddr() { return mrgn_table_address; }
 uint32_t getMRGNDataAddr() { return mrgn_data_address; }
 
-// Function to convert a string to a vector of bytes
 std::vector<uint8_t> StringToByteVector(const std::string& str) {
     return std::vector<uint8_t>(str.begin(), str.end());
 }
 
-// Function to open the process with the required access rights
 bool OpenTargetProcess(DWORD processID) {
     hProcess = OpenProcess(PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION, FALSE, processID);
     if (hProcess == NULL) {
@@ -41,58 +39,98 @@ bool OpenTargetProcess(DWORD processID) {
     return true;
 }
 
-// Function to read a block of memory from the process
 bool ReadMemory(LPCVOID address, SIZE_T length, BYTE* buffer) {
     SIZE_T bytesRead;
     return ReadProcessMemory(hProcess, address, buffer, length, &bytesRead) && bytesRead == length;
 }
+
+bool WriteMemory(LPVOID address, SIZE_T length, BYTE* buffer) {
+    SIZE_T bytesWrite;
+    return WriteProcessMemory(hProcess, address, buffer, length, &bytesWrite) && bytesWrite == length;
+}
+
 std::string strread(uint32_t address, size_t size) {
     std::vector<char> buf(size);
     if (ReadMemory(reinterpret_cast<LPCVOID>(address), size, reinterpret_cast<BYTE*>(buf.data()))) {
         return std::string(buf.data(), size);
     }
     else {
-        std::cerr << "Error: Failed to read memory from address " << address << ".\n";
+        std::cout << "Error: Failed to read memory from address " << address << ".\n";
         return std::string();
     }
 }
 
-// Function to read 4 bytes as uint32_t
 uint32_t dwread(uint32_t address) {
     uint32_t value = 0;
     if (ReadMemory(reinterpret_cast<LPCVOID>(address), sizeof(value), reinterpret_cast<BYTE*>(&value))) {
         return value;
     }
     else {
-        std::cerr << "Error: Failed to read 4 bytes from memory.\n";
-        DWORD error = GetLastError();
-        std::cout << "hProcess: 0x" << std::hex << hProcess << std::endl;
-        std::cerr << "ReadProcessMemory failed with error: " << error << "\n";
-        return 0; // Return 0 or some error value
+        std::cout << "Error: Failed to read 4bytes from memory.\n";
+        return 0;
     }
 }
 
-// Function to read 2 bytes as uint16_t
 uint16_t wread(uint32_t address) {
     uint16_t value = 0;
     if (ReadMemory(reinterpret_cast<LPCVOID>(address), sizeof(value), reinterpret_cast<BYTE*>(&value))) {
         return value;
     }
     else {
-        std::cerr << "Error: Failed to read 2 bytes from memory.\n";
-        return 0; // Return 0 or some error value
+        std::cout << "Error: Failed to read 2bytes from memory.\n";
+        return 0;
     }
 }
 
-// Function to read 1 byte as uint8_t
 uint8_t bread(uint32_t address) {
     uint8_t value = 0;
     if (ReadMemory(reinterpret_cast<LPCVOID>(address), sizeof(value), reinterpret_cast<BYTE*>(&value))) {
         return value;
     }
     else {
-        std::cerr << "Error: Failed to read 1 byte from memory.\n";
-        return 0; // Return 0 or some error value
+        std::cout << "Error: Failed to read byte from memory.\n";
+        return 0;
+    }
+}
+
+
+bool dwwrite(uint32_t address, uint32_t value) {
+    if(WriteMemory(reinterpret_cast<LPVOID>(address), 4,  reinterpret_cast<BYTE*>(&value))) {
+        return true;
+    }
+    else {
+        std::cout << "Error: Failed to write 4bytes to memory.\n";
+        return false;
+    }
+}
+
+bool wwrite(uint32_t address, uint16_t value) {
+    if (WriteMemory(reinterpret_cast<LPVOID>(address), 2, reinterpret_cast<BYTE*>(&value))) {
+        return true;
+    }
+    else {
+        std::cout << "Error: Failed to write 2bytes to memory.\n";
+        return false;
+    }
+}
+
+bool bwrite(uint32_t address, uint8_t value) {
+    if (WriteMemory(reinterpret_cast<LPVOID>(address), 1, reinterpret_cast<BYTE*>(&value))) {
+        return true;
+    }
+    else {
+        std::cout << "Error: Failed to write byte to memory.\n";
+        return false;
+    }
+}
+
+bool vecwrite(uint32_t address, std::vector<uint8_t> value) {
+    if (WriteMemory(reinterpret_cast<LPVOID>(address), value.size(), reinterpret_cast<BYTE*>(&value))) {
+        return true;
+    }
+    else {
+        std::cout << "Error: Failed to write vec to memory.\n";
+        return false;
     }
 }
 

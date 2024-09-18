@@ -219,41 +219,85 @@ def init_signature():
 # param3    4byte
 # mask      4byte
 
-## packet send
+## packet header
+# bufferEPD
 # 20byte * 50 = 1kb
-# whoIsUsing    2byte
-# isConnected   2byte
+# whoIsUsing    1byte
+# isConnected   1byte
+# stackedCount  2byte
 # currentHead   4byte
 # currentEnd    4byte
 
 sendCount = EUDVariable(0)
-sendHeadEPD = EUDXVariable(0, SetTo, 0, 250)
-sendTailEPD = EUDXVariable(0, SetTo, 0, 250)
+sendHeadEPD = EUDVariable(0)
+sendTailEPD = EUDVariable(0)
 def sendPacket(opCode, param1, param2, param3, mask=0xFFFFFFFF):
-    DoActions([
-        SetMemoryEPD(bufferEPD, SetTo, 1),
-        SetMemoryEPD(bufferEPD+2, SetTo, sendTailEPD),
-    ])
+    endTrigger = Forward()
+    f_simpleprint("0x", hptr(f_maskread_epd(bufferEPD, 0xFFFFFFFF)))
+    EUDJumpIfNot([MemoryXEPD(bufferEPD, Exactly, 0, 0xFF)], endTrigger) # program using / not connected // , MemoryXEPD(bufferEPD, AtLeast, 1<<8, 0xFF00)]
+    
     baseEPD = (bufferEPD+sendTailEPD+3)
     DoActions([
-        SetMemoryXEPD(baseEPD, SetTo, opCode<<24, 0xFF000000),
+        SetMemoryXEPD(bufferEPD, SetTo, 1, 0xFF),
+        SetMemoryXEPD(bufferEPD, Add, 1 << 16, 0xFFFF0000),
+        SetMemoryXEPD(baseEPD, SetTo, opCode, 0xFFFF),
         SetMemoryEPD(baseEPD+1, SetTo, param1),
         SetMemoryEPD(baseEPD+2, SetTo, param2),
         SetMemoryEPD(baseEPD+3, SetTo, param3),
         SetMemoryEPD(baseEPD+4, SetTo, mask),
-        SetMemoryEPD(bufferEPD, SetTo, 0),
-        sendCount.AddNumber(1),
+        sendCount.AddNumber(1<<16),
         sendTailEPD.AddNumber(5),
     ])
-    f_maskwrite_epd(baseEPD, sendCount, 0xFFFFFF)
-    #f_eprintln(hptr(f_dwread_epd(baseEPD)), " ",hptr(f_dwread_epd(baseEPD+1)), " ",f_dwread_epd(baseEPD+2), " ",hptr(f_dwread_epd(baseEPD+3)))
+    
+    RawTrigger(
+        conditions=sendTailEPD.AtLeast(250),
+        actions=sendTailEPD.SubtractNumber(250)
+    )
+    f_maskwrite_epd(baseEPD, sendCount, 0xFFFF0000)
+    f_dwwrite_epd(bufferEPD+2, sendTailEPD)
+    
+    DoActions(SetMemoryXEPD(bufferEPD, SetTo, 0, 0xFF))
+    endTrigger << NextTrigger()
+
+
+def receivePacket():
+    ...
+
+@EUDFunc
+def debugDoTrigger(param1, param2, param3, param4):
+    act = []
+    EUDSwitch(param1, 0xFF)
+    if EUDSwitchCase()(1): # Create Unit
+        chkt = GetChkTokenized()
+        dim = chkt.getsection("DIM")
+        mapX = b2i2(dim, 0) << 5
+        mapY = b2i2(dim, 2) << 5
+        
+        # param1: AA param2: location YYXX, param3: unit_number, param4: target_player
+        f_setloc_epd(EncodeLocation("Anywhere"), EPD(param2.getValueAddr))
+        DoActions(CreateUnit(1, param3, EncodeLocation("Anywhere"), param4))
+        f_setloc(EncodeLocation("Anywhere"), 0, 0, mapX*32, mapY*32)
+        
+        EUDBreak()
+    if EUDSwitchCase()(10): # Get Clicked Unit
+        ...
+        EUDBreak()
+    if EUDSwitchCase()(11): # Remove Clicked Unit
+        ...
+        EUDBreak()
+    if EUDSwitchCase()(12): # Move Clicked Unit
+        ...
+        EUDBreak()
+    EUDEndSwitch()
+        
 
 def onPluginStart():
     init_signature()
     ev.EUDVariable.__init__ = patched_init
+    sendPacket(0xAB, 0x00FF00FF, 0xAAAABBBB, 0xBBBBCCCC)
 
 def beforeTriggerExec():
-    sendPacket(0xAB, 0x00FF00FF, 0xAAAABBBB, 0xBBBBCCCC)
+    ...
     #f_eprintln(epd2s(signatureEPD))
     
 def afterTriggerExec():
@@ -262,4 +306,5 @@ def afterTriggerExec():
     for var in vars:
         print(var)
     save_data()
+    f_eprintln("sendHeadEPD: ", sendHeadEPD, " sendTailEPD: ", sendTailEPD)
     

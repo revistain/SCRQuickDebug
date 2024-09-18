@@ -8,6 +8,7 @@
 /Release
 *.pdb
 *.tlog
+/plugins
 
 # Compiled Object files
 *.slo
