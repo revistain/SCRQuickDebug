@@ -63,5 +63,20 @@ void process_packets() {
         std::cout << std::hex << "param2\t: " << packet.param2 << std::endl;
         std::cout << std::hex << "param3\t: " << packet.param3 << std::endl;
         std::cout << std::hex << "mask  \t: " << packet.mask << std::endl;
+
+        switch (packet.opCode) {
+        case 0:
+            // pass
+            break;
+        case 1: // get initial datas
+            
+            break;
+        case 2: // reply
+            // param1: unique identifier
+            // param2: value
+            // param3: string offset
+            break;
+            
+        }
     }
 }

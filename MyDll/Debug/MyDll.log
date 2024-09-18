@@ -1,3 +1,8 @@
-﻿  pch.cpp
-  dllmain.cpp
-  MyDll.vcxproj -> C:\Users\robin\source\repos\dll_main\Debug\MyDll.dll
+﻿  dllmain.cpp
+  glhook.cpp
+  코드를 생성하고 있습니다...
+     C:\Users\pc\source\repos\revistain\SCRQuickDebug\Debug\MyDll.lib 라이브러리 및 C:\Users\pc\source\repos\revistain\SCRQuickDebug\Debug\MyDll.exp 개체를 생성하고 있습니다.
+dllmain.obj : error LNK2019: __imp__wglGetProcAddress@4_DllMain@12 함수에서 참조되는 확인할 수 없는 외부 기호
+dllmain.obj : error LNK2019: __imp__glColor3f@12"void __cdecl glBeginHook(unsigned int)" (?glBeginHook@@YAXI@Z) 함수에서 참조되는 확인할 수 없는 외부 기호
+dllmain.obj : error LNK2019: __imp__glVertex3f@12"void __cdecl glBeginHook(unsigned int)" (?glBeginHook@@YAXI@Z) 함수에서 참조되는 확인할 수 없는 외부 기호
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\Debug\MyDll.dll : fatal error LNK1120: 3개의 확인할 수 없는 외부 참조입니다.
