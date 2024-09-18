@@ -17,5 +17,7 @@ typedef struct {
 	uint32_t mask	: 4;
 }Packet;
 
+std::vector<Packet> packets;
+
 void readPacket(Packet& packet, uint32_t address);
 #endif

@@ -33,7 +33,7 @@ std::vector<uint8_t> StringToByteVector(const std::string& str) {
 
 // Function to open the process with the required access rights
 bool OpenTargetProcess(DWORD processID) {
-    hProcess = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, FALSE, processID);
+    hProcess = OpenProcess(PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION, FALSE, processID);
     if (hProcess == NULL) {
         std::cerr << "Failed to open process. Error code: " << GetLastError() << std::endl;
         return false;
@@ -65,6 +65,9 @@ uint32_t dwread(uint32_t address) {
     }
     else {
         std::cerr << "Error: Failed to read 4 bytes from memory.\n";
+        DWORD error = GetLastError();
+        std::cout << "hProcess: 0x" << std::hex << hProcess << std::endl;
+        std::cerr << "ReadProcessMemory failed with error: " << error << "\n";
         return 0; // Return 0 or some error value
     }
 }
@@ -101,7 +104,7 @@ uint32_t find_signature_address() {
     // Get process ID
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnapshot == INVALID_HANDLE_VALUE) {
-        std::cerr << "Failed to create snapshot. Error code: " << GetLastError() << std::endl;
+        throw "Failed to create snapshot!";
         return 0;
     }
 
@@ -120,40 +123,44 @@ uint32_t find_signature_address() {
     CloseHandle(hSnapshot);
 
     if (processID == 0) {
-        std::cerr << "Process not found." << std::endl;
-        return 0;
+        throw "Process not found!";
     }
 
     // Open the process
     if (!OpenTargetProcess(processID)) {
-        return 0;
+        throw "cannot open process!";
     }
 
-    // Define the signature to search for
     std::string signature_str = "GongjknOSDIfnwlnlSNDKlnfkopqfnkLDNSFpwIn";
     std::vector<uint8_t> signature = StringToByteVector(signature_str);
-    //LPVOID address = reinterpret_cast<LPVOID>(0xFFFFFFFF); // Start from the top of the memory space
-    searchMemory(hProcess, signature, 4);
-    //std::cout << "END sfound: 0x" << std::hex << found_address << "\n";
-    //if (found_address) return found_address;
-    CloseHandle(hProcess);
-    return 0;
+    searchMemory(hProcess, signature, 10);
+    return getFoundAddr();
 }
 
 
 void init_signature() {
-    if (find_signature_address() != 0) {
-        base_address = signature_address - unEPD(dwread(signature_address+40));
-        packet_address = unEPD(dwread(signature_address + 44));
-        func_table_address = dwread(signature_address + 48);
-        var_table_address = dwread(signature_address + 52);
-        var_data_address = dwread(signature_address + 56);
-        mrgn_table_address = dwread(signature_address + 60);
-        mrgn_data_address = dwread(signature_address + 64);
-        std::cout << "base_address: 0x" << std::hex << packet_address << std::endl;
+    try {
+        signature_address = find_signature_address();
+        if (signature_address != 0) {
+            base_address = signature_address - unEPD(dwread(signature_address + 40));
+            packet_address = base_address + unEPD(dwread(signature_address + 44));
+            func_table_address = base_address + dwread(signature_address + 48);
+            var_table_address = base_address + dwread(signature_address + 52);
+            var_data_address = base_address + dwread(signature_address + 56);
+            mrgn_table_address = base_address + dwread(signature_address + 60);
+            mrgn_data_address = base_address + dwread(signature_address + 64);
+            std::cout << "base_address: 0x" << std::hex << base_address << std::endl;
+            std::cout << "packet_address: 0x" << std::hex << packet_address << std::endl;
+            std::cout << "func_table_address: 0x" << std::hex << func_table_address << std::endl;
+            std::cout << "var_table_address: 0x" << std::hex << var_table_address << std::endl;
+            std::cout << "var_data_address: 0x" << std::hex << var_data_address << std::endl;
+
+        }
+        else { throw "found Signature is 0x00000000"; }
     }
-    else {
-        std::cerr << "Failed to find signature address." << std::endl;
+    catch (const char* e) {
+        CloseHandle(hProcess);
+        throw "Error finding signature";
     }
 }
 

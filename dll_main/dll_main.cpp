@@ -14,13 +14,13 @@ int main() {
 				"\taddr: 0x" << std::hex << getBaseAddr() + vars.eudvars[i].address << std::endl;
 		}
 		for (int i = 0; i < vars.Locations.size(); i++) {
-			std::cout << "loc " << i+1 << ": " << vars.Locations[i] << std::endl;
+			if(vars.Locations[i] != "") std::cout << std::dec << "loc " << i + 1 << ": " << vars.Locations[i] << std::endl;
 		}
 
 		while (1) {
 			vars.update_value();
 			for (auto& var : vars.eudvars) {
-				std::cout << vars.strtable.var_str[var.var_index] << ": \t0x" << std::hex
+				std::cout << vars.strtable.func_str[var.func_index] << "@@" << vars.strtable.var_str[var.var_index] << ": \t0x" << std::hex
 					<< var.value << std::endl;
 			}
 			system("pause");

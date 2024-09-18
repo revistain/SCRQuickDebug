@@ -23,4 +23,6 @@ uint32_t getMRGNDataAddr();
 
 std::string strread(uint32_t address, size_t size);
 uint32_t dwread(uint32_t address);
+uint16_t wread(uint32_t address);
+uint8_t bread(uint32_t address);
 #endif

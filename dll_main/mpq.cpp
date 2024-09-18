@@ -105,7 +105,7 @@ Section& MPQRead::findSectionByName(const char* name) {
 bool extractMPQ() {
     try {
         MPQRead mr = MPQRead();
-        mr.open("C:\\Users\\robin\\OneDrive\\¹®¼­\\StarCraft\\Maps\\Download\\qwer\\test_eud.scx");
+        mr.open("alba.scx");
         mr.extractChk();
         mr.parseChk();
         return true;

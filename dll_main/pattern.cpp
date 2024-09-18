@@ -8,6 +8,10 @@
 // Mutex for safe access to foundAddresses
 std::mutex foundMutex;
 std::vector<LPCVOID> foundAddresses; // 저장할 메모리 주소
+uint32_t getFoundAddr() {
+    if (foundAddresses.size() > 1) throw "multiple signature Found!!";
+    return reinterpret_cast<uint32_t>(foundAddresses[0]);
+}
 
 // Boyer-Moore의 bad character 테이블 생성
 std::vector<int> buildBadCharTable(const std::vector<uint8_t>& needle) {
@@ -65,12 +69,14 @@ std::vector<uint8_t> readProcessMemory(HANDLE hProcess, LPCVOID baseAddress, SIZ
 
 // 메모리 페이지 단위로 검색하는 함수
 void searchMemory(HANDLE hProcess, const std::vector<uint8_t>& signature, int numThreads) {
+    foundAddresses.clear();
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo); // 시스템 정보 가져오기
 
     LPCVOID address = sysInfo.lpMinimumApplicationAddress; // 검색할 메모리의 시작 주소
-    LPCVOID maxAddress = sysInfo.lpMaximumApplicationAddress; // 검색할 메모리의 끝 주소
+    LPCVOID maxAddress = reinterpret_cast<LPCVOID>(0xFFFFFFFF); // 검색할 메모리의 끝 주소
     MEMORY_BASIC_INFORMATION mbi;
+    std::cout << std::hex << "start address: 0x" << address << "  end: 0x" << maxAddress << "\n";
 
     std::vector<std::thread> threads;
 
@@ -115,7 +121,7 @@ void searchMemory(HANDLE hProcess, const std::vector<uint8_t>& signature, int nu
     // 결과 출력
     if (!foundAddresses.empty()) {
         for (const auto& addr : foundAddresses) {
-            std::cout << "Pattern found at address: " << addr << std::endl;
+            std::cout << "Pattern found at address: 0x" << std::hex << addr << std::endl;
         }
     }
     else {

@@ -1,0 +1,52 @@
+﻿  dll_main.cpp
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\section.h(1,9): warning C4005: '_CRT_SECURE_NO_WARNINGS': 매크로 재정의
+  (소스 파일 'dll_main.cpp'을(를) 컴파일하는 중)
+      C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\section.h(1,9):
+      이전에 명령줄에서 선언된 '_CRT_SECURE_NO_WARNINGS'
+  
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\dll_main.cpp(32,9): warning C4101: 'packet' :참조되지 않은 지역 변수입니다.
+  encoding.cpp
+  eud.cpp
+  packet.cpp
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\packet.cpp(7,33): warning C4312: '형식 캐스트': 'uint32_t'에서 더 큰 'LPCVOID'(으)로의 변환입니다.
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\packet.cpp(12,45): warning C4312: '형식 캐스트': 'uint32_t'에서 더 큰 'LPCVOID'(으)로의 변환입니다.
+  pattern.cpp
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\pattern.cpp(13,12): warning C4311: 'reinterpret_cast': '_Ty'에서 'uint32_t'(으)로 포인터가 잘립니다.
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\pattern.cpp(13,12): warning C4311:         with
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\pattern.cpp(13,12): warning C4311:         [
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\pattern.cpp(13,12): warning C4311:             _Ty=LPCVOID
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\pattern.cpp(13,12): warning C4311:         ]
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\pattern.cpp(13,12): warning C4302: 'reinterpret_cast': '_Ty'에서 'uint32_t'(으)로 잘립니다.
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\pattern.cpp(13,12): warning C4302:         with
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\pattern.cpp(13,12): warning C4302:         [
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\pattern.cpp(13,12): warning C4302:             _Ty=LPCVOID
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\pattern.cpp(13,12): warning C4302:         ]
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\pattern.cpp(30,11): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\pattern.cpp(31,11): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\pattern.cpp(95,88): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  section.cpp
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\section.h(1,9): warning C4005: '_CRT_SECURE_NO_WARNINGS': 매크로 재정의
+  (소스 파일 'section.cpp'을(를) 컴파일하는 중)
+      C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\section.h(1,9):
+      이전에 명령줄에서 선언된 '_CRT_SECURE_NO_WARNINGS'
+  
+  signature.cpp
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\signature.cpp(51,20): warning C4312: 'reinterpret_cast': 'uint32_t'에서 더 큰 'LPCVOID'(으)로의 변환입니다.
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\signature.cpp(63,20): warning C4312: 'reinterpret_cast': 'uint32_t'에서 더 큰 'LPCVOID'(으)로의 변환입니다.
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\signature.cpp(78,20): warning C4312: 'reinterpret_cast': 'uint32_t'에서 더 큰 'LPCVOID'(으)로의 변환입니다.
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\signature.cpp(90,20): warning C4312: 'reinterpret_cast': 'uint32_t'에서 더 큰 'LPCVOID'(으)로의 변환입니다.
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\signature.cpp(161,24): warning C4101: 'e' :참조되지 않은 지역 변수입니다.
+  variable.cpp
+  mpq.cpp
+C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\section.h(1,9): warning C4005: '_CRT_SECURE_NO_WARNINGS': 매크로 재정의
+  (소스 파일 'mpq.cpp'을(를) 컴파일하는 중)
+      C:\Users\pc\source\repos\revistain\SCRQuickDebug\dll_main\section.h(1,9):
+      이전에 명령줄에서 선언된 '_CRT_SECURE_NO_WARNINGS'
+  
+mpq.obj : error LNK2001: 확인할 수 없는 외부 기호 SFileCloseArchive
+mpq.obj : error LNK2001: 확인할 수 없는 외부 기호 SFileCloseFile
+mpq.obj : error LNK2001: 확인할 수 없는 외부 기호 SFileReadFile
+mpq.obj : error LNK2001: 확인할 수 없는 외부 기호 SFileOpenFileEx
+mpq.obj : error LNK2001: 확인할 수 없는 외부 기호 SFileGetFileSize
+mpq.obj : error LNK2001: 확인할 수 없는 외부 기호 SFileOpenArchive
+C:\Users\pc\Source\Repos\revistain\SCRQuickDebug\x64\Release\dll_main.exe : fatal error LNK1120: 6개의 확인할 수 없는 외부 참조입니다.
