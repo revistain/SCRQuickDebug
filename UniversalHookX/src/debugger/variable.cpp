@@ -55,7 +55,6 @@ Variables::Variables(std::string& func_data, std::string& var_data, std::string&
 }
 
 Variables init_variables() {
-
 	const uint32_t func_table_addr = getFuncTableAddr();
 	std::string section_name = strread(func_table_addr, 4);
 	std::cout << "section: " << section_name << std::endl;
@@ -91,10 +90,17 @@ Variables init_variables() {
 	section_size = dwread(mrgn_data_table_addr + 4);
 	std::string mrgn_data_str = strread(mrgn_data_table_addr + 8, section_size);
 
-	return std::move(Variables(func_str, var_str, mrgn_str, var_data_str, mrgn_data_str));
+	
+	return Variables(func_str, var_str, mrgn_str, var_data_str, mrgn_data_str); // RVO
 }
 
 void Variables::update_value() {
+	// update screen size
+    uint32_t screen_addr = getScreenDataAddr();
+    screenTL[0] = dwread(screen_addr);
+    screenTL[1] = dwread(screen_addr + 4);
+
+	// update eudvariable
 	for (auto& var : eudvars) {
 		uint32_t addr = var.address;
 		var.value = dwread(addr);

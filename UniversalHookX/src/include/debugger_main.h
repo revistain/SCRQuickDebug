@@ -1,6 +1,9 @@
 #ifndef DEBUGGER_MAIN_H
 #define DEBUGGER_MAIN_H
+#include "signature.h"
+#include "variable.h"
+#include "packet.h"
 
-int debugger_main( );
+Variables getVariables( );
 
 #endif

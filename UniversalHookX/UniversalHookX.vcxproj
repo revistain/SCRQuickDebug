@@ -225,6 +225,7 @@
     <ClCompile Include="src\hooks\backend\vulkan\hook_vulkan.cpp" />
     <ClCompile Include="src\hooks\hooks.cpp" />
     <ClCompile Include="src\LocationDraw.cpp" />
+    <ClCompile Include="src\memoryRW.cpp" />
     <ClCompile Include="src\menu\menu.cpp" />
     <ClCompile Include="src\ratio.cpp" />
     <ClCompile Include="src\scenariochk\encoding.cpp" />
@@ -234,6 +235,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\drawing.h" />
+    <ClInclude Include="src\game_data.h" />
     <ClInclude Include="src\imgui_scr.h" />
     <ClInclude Include="src\backend.hpp" />
     <ClInclude Include="src\console\console.hpp" />
@@ -280,6 +282,7 @@
     <ClInclude Include="src\include\signature.h" />
     <ClInclude Include="src\include\variable.h" />
     <ClInclude Include="src\LocationDraw.h" />
+    <ClInclude Include="src\memoryRW.h" />
     <ClInclude Include="src\menu\menu.hpp" />
     <ClInclude Include="src\ratio.h" />
     <ClInclude Include="src\utils\utils.hpp" />

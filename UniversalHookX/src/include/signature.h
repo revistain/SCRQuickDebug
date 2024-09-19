@@ -20,6 +20,7 @@ uint32_t getVarTableAddr();
 uint32_t getVarDataAddr(); 
 uint32_t getMRGNTableAddr();
 uint32_t getMRGNDataAddr();
+uint32_t getScreenDataAddr();
 
 std::string strread(uint32_t address, size_t size);
 uint32_t dwread(uint32_t address);

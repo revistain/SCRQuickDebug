@@ -16,6 +16,7 @@ uint32_t var_table_address;
 uint32_t var_data_address;
 uint32_t mrgn_table_address;
 uint32_t mrgn_data_address;
+uint32_t screen_data_address;
 
 HANDLE getProcessHandle() { return hProcess; }
 uint32_t getSignatureAddr() { return signature_address; }
@@ -26,6 +27,7 @@ uint32_t getVarTableAddr() { return var_table_address; }
 uint32_t getVarDataAddr() { return var_data_address; }
 uint32_t getMRGNTableAddr() { return mrgn_table_address; }
 uint32_t getMRGNDataAddr() { return mrgn_data_address; }
+uint32_t getScreenDataAddr() { return screen_data_address; }
 
 std::vector<uint8_t> StringToByteVector(std::string& str) {
     std::vector<uint8_t> ret = std::vector<uint8_t>(str.begin( ), str.end( ));
@@ -175,9 +177,6 @@ uint32_t find_signature_address() {
     std::vector<uint8_t> signature = StringToByteVector(signature_str);
     LOG("Seaching start\n");
     searchMemory(hProcess, signature, 10);
-    system("pause");
-    signature[0] = (uint8_t)"Z";
-    system("pause");
 
     return getFoundAddr( );
 }
@@ -195,6 +194,7 @@ void init_signature() {
             var_data_address = base_address + dwread(signature_address + 56);
             mrgn_table_address = base_address + dwread(signature_address + 60);
             mrgn_data_address = base_address + dwread(signature_address + 64);
+            screen_data_address = base_address + unEPD(dwread(signature_address + 68));
             std::cout << "base_address: 0x" << std::hex << base_address << std::endl;
             std::cout << "packet_address: 0x" << std::hex << packet_address << std::endl;
             std::cout << "func_table_address: 0x" << std::hex << func_table_address << std::endl;

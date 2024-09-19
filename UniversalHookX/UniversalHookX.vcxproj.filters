@@ -41,6 +41,7 @@
     <ClCompile Include="src\scenariochk\encoding.cpp" />
     <ClCompile Include="src\scenariochk\mpq.cpp" />
     <ClCompile Include="src\scenariochk\section.cpp" />
+    <ClCompile Include="src\memoryRW.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\console\console.hpp" />
@@ -88,5 +89,7 @@
     <ClInclude Include="src\include\signature.h" />
     <ClInclude Include="src\include\variable.h" />
     <ClInclude Include="src\include\debugger_main.h" />
+    <ClInclude Include="src\game_data.h" />
+    <ClInclude Include="src\memoryRW.h" />
   </ItemGroup>
 </Project>

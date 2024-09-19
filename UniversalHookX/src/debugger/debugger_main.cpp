@@ -1,11 +1,8 @@
-#include "signature.h"
-#include "variable.h"
-#include "packet.h"
 #include "debugger_main.h"
 #include "../console/console.hpp"
 //#include "mpq.h"
 
-int debugger_main() {
+Variables getVariables() {
 	try {
 		//extractMPQ();
 		init_signature();
@@ -28,14 +25,14 @@ int debugger_main() {
 			}
 			system("pause");
 		}
-		*/
 		while (1) {
 			process_packets();
 		}
-	}
+        */
+        return vars;
+    }
 	catch (const char* e) {
         LOG("ERROR: %s", e);
         system("pause");
 	}
-    return 0;
 }

@@ -9,6 +9,7 @@
 #include "./console/console.hpp"
 #include "ratio.h"
 #include "drawing.h"
+#include "game_data.h"
 
 void StarCraft_UI();
 #endif
