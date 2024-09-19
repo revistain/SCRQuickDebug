@@ -24,7 +24,7 @@ void buildBadCharTable(const std::vector<uint8_t>& needle) {
 }
 
 // Boyer-Moore 알고리즘
-volatile int boyerMooreSearch(const std::vector<uint8_t>& haystack, std::vector<uint8_t>& needle, int start, int end) {
+int boyerMooreSearch(const std::vector<uint8_t>& haystack, std::vector<uint8_t>& needle, int start, int end) {
     int m = needle.size( );
     int n = haystack.size();
     if (m == 0 || n == 0 || m > n) return -1;
@@ -89,7 +89,7 @@ extern "C" __declspec(dllexport) void GetDllBaseAddress() {
 
 void searchMemory(HANDLE hProcess, std::vector<uint8_t>& signature, int numThreads) {
     LOG("needle address: 0x%08p\n", &signature);
-    HMODULE hModule = GetModuleHandle(TEXT("eudplib_debug.dll")); // to exclude the signature from dll
+    HMODULE hModule = GetModuleHandle(TEXT("eudplib_debug.dll"));
     if (!hModule) {
         throw "Failed to get DLL handle.";
     }
@@ -109,33 +109,21 @@ void searchMemory(HANDLE hProcess, std::vector<uint8_t>& signature, int numThrea
     std::cout << std::hex << "start address: 0x" << address << "  end: 0x" << maxAddress << "\n";
 
     
-// std::vector<std::thread> threads; // Uncomment if you decide to use threading
-    std::vector<uint8_t> real_signature_one(signature.begin( ), signature.end( ) - 20);
-    std::vector<uint8_t> real_signature_two(signature.begin( ) + 20, signature.end( ));
-    for (auto& chr : real_signature_one) {
-        LOG("%c", chr);
-    }
-    LOG("DUMMY");
-    for (auto& chr : real_signature_two) {
-        LOG("%c", chr);
-    }
-    LOG("\n");
+    // std::vector<std::thread> threads; // Uncomment if you decide to use threading
     buildBadCharTable(signature);
     while (address < maxAddress) {
         if (VirtualQueryEx(hProcess, address, &mbi, sizeof(mbi)) == sizeof(mbi)) {
-            // Check if the page is committed and has appropriate protection
             if (mbi.State == MEM_COMMIT &&
                 (mbi.Protect == PAGE_READWRITE ||
                  mbi.Protect == PAGE_READONLY ||
                  mbi.Protect == PAGE_EXECUTE_READ)) {
 
-                // Skip the memory region of the DLL
                 if (address >= dllBaseAddress && address < (LPCVOID)((uintptr_t)dllBaseAddress + dllSize)) {
                     LOG("Skipping DLL memory: 0x%08X ~ 0x%08X\n",
                         mbi.BaseAddress,
                         (LPCVOID)((uintptr_t)mbi.BaseAddress + mbi.RegionSize));
                     address = (LPCVOID)((uintptr_t)mbi.BaseAddress + mbi.RegionSize);
-                    continue; // Skip this iteration and move to the next region
+                    continue;
                 }
 
                 SIZE_T regionSize = mbi.RegionSize;
@@ -158,7 +146,6 @@ void searchMemory(HANDLE hProcess, std::vector<uint8_t>& signature, int numThrea
                         }
                     }
 
-                    // Uncomment this block if using threads for searching
                     /*
                     threads.emplace_back([&, regionSize, buffer, mbi]() {
                         int result = boyerMooreSearch(buffer, signature, 0, buffer.size());
@@ -171,10 +158,9 @@ void searchMemory(HANDLE hProcess, std::vector<uint8_t>& signature, int numThrea
                     */
                 }
             }
-            // Move to the next memory region
             address = (LPCVOID)((uintptr_t)mbi.BaseAddress + mbi.RegionSize);
         } else {
-            break; // Exit the loop if VirtualQueryEx fails
+            break;
         }
     }
 

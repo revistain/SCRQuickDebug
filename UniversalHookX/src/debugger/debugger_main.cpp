@@ -15,7 +15,6 @@ Variables getVariables() {
 		for (int i = 0; i < vars.Locations.size(); i++) {
             LOG("loc %d: %s\n", i + 1, vars.Locations[i].c_str());
 		}
-
 		/*
 		while (1) {
 			vars.update_value();
@@ -29,10 +28,13 @@ Variables getVariables() {
 			process_packets();
 		}
         */
+        end_signature();
         return vars;
     }
 	catch (const char* e) {
-        LOG("ERROR: %s", e);
+        LOG("ERROR on getVariables: %s", e);
+        end_signature( );
         system("pause");
+        throw "error catch on getVariables";
 	}
 }

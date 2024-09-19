@@ -27,7 +27,9 @@ public:
 	StringTable strtable;
 	std::vector<EUDVariable> eudvars;
 	std::vector<std::string> Locations;
-    uint32_t screenTL[2]; // max 0x1FFF
+    uint32_t screenTL[2];
+    std::string mapPath;
+	
 
 	Variables(std::string& func_data, std::string& var_data,
 		std::string& loc_data, std::string& vdata, std::string& mdata);

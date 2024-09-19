@@ -7,7 +7,7 @@
 #include <string>
 #include "../console/console.hpp"
 
-HANDLE hProcess;  // Global handle to the process
+static HANDLE hProcess;  // Global handle to the process
 uint32_t signature_address;
 uint32_t base_address;
 uint32_t packet_address;
@@ -17,6 +17,7 @@ uint32_t var_data_address;
 uint32_t mrgn_table_address;
 uint32_t mrgn_data_address;
 uint32_t screen_data_address;
+uint32_t map_path_address;
 
 HANDLE getProcessHandle() { return hProcess; }
 uint32_t getSignatureAddr() { return signature_address; }
@@ -28,6 +29,7 @@ uint32_t getVarDataAddr() { return var_data_address; }
 uint32_t getMRGNTableAddr() { return mrgn_table_address; }
 uint32_t getMRGNDataAddr() { return mrgn_data_address; }
 uint32_t getScreenDataAddr() { return screen_data_address; }
+uint32_t getMapPathAddr() { return map_path_address; }
 
 std::vector<uint8_t> StringToByteVector(std::string& str) {
     std::vector<uint8_t> ret = std::vector<uint8_t>(str.begin( ), str.end( ));
@@ -170,7 +172,7 @@ uint32_t find_signature_address() {
 
     // Open the process
     if (!OpenTargetProcess(processID)) {
-        throw "cannot open process!";
+        return 0;
     }
 
     std::string signature_str("GongjknOSDIfnwlnlSNDKlnfkopqfnkLDNSF");
@@ -195,17 +197,11 @@ void init_signature() {
             mrgn_table_address = base_address + dwread(signature_address + 60);
             mrgn_data_address = base_address + dwread(signature_address + 64);
             screen_data_address = base_address + unEPD(dwread(signature_address + 68));
-            std::cout << "base_address: 0x" << std::hex << base_address << std::endl;
-            std::cout << "packet_address: 0x" << std::hex << packet_address << std::endl;
-            std::cout << "func_table_address: 0x" << std::hex << func_table_address << std::endl;
-            std::cout << "var_table_address: 0x" << std::hex << var_table_address << std::endl;
-            std::cout << "var_data_address: 0x" << std::hex << var_data_address << std::endl;
-
+            map_path_address = base_address + unEPD(dwread(signature_address + 72));
         }
-        else { throw "found Signature is 0x00000000"; }
+        else { std::cerr << "cannot find signature address\n"; }
     }
     catch (const char* e) {
-        CloseHandle(hProcess);
         throw "Error finding signature";
     }
 }

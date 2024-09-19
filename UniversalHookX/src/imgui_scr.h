@@ -10,6 +10,7 @@
 #include "ratio.h"
 #include "drawing.h"
 #include "game_data.h"
+#include "LocationDraw.h"
 
 void StarCraft_UI();
 #endif

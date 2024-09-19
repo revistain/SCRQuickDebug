@@ -29,8 +29,10 @@ StringTable::StringTable(std::string& func_data, std::string& var_data, std::str
 }
 
 Variables::Variables(std::string& func_data, std::string& var_data, std::string& loc_data,
-	std::string& vdata, std::string& mdata) : strtable(func_data, var_data, loc_data) {
-	uint32_t func_idx = 0;
+                     std::string& vdata, std::string& mdata) : strtable(func_data, var_data, loc_data) {
+    screenTL[0] = 0;
+    screenTL[1] = 0;
+    uint32_t func_idx = 0;
 	uint32_t var_idx = 0;
 	uint32_t var_addr = 0;
 	const uint32_t base_addr = getBaseAddr();
@@ -52,6 +54,9 @@ Variables::Variables(std::string& func_data, std::string& var_data, std::string&
 		if (loc_str_idx >= strtable.loc_str.size()) Locations[loc_idx] = "";
 		else Locations[loc_idx] = strtable.loc_str[loc_str_idx];
 	}
+
+     uint32_t map_path_addr = getMapPathAddr();
+     mapPath = strread(map_path_addr, 260);
 }
 
 Variables init_variables() {
