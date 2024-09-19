@@ -19,7 +19,11 @@ uint32_t mrgn_data_address;
 uint32_t screen_data_address;
 uint32_t map_path_address;
 
-HANDLE getProcessHandle() { return hProcess; }
+uint32_t exeAddr = 0;
+uint32_t processID = 0;
+
+HANDLE getProcessHandle( ) { return hProcess; }
+uint32_t getEXEAddr( ) { return exeAddr; }
 uint32_t getSignatureAddr() { return signature_address; }
 uint32_t getBaseAddr() { return base_address; }
 uint32_t getPacketAddr() { return packet_address; }
@@ -37,7 +41,51 @@ std::vector<uint8_t> StringToByteVector(std::string& str) {
     return ret;
 }
 
-bool OpenTargetProcess(DWORD processID) {
+void GetModuleBaseAddress(const wchar_t* modName) {
+    HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, processID);
+    if (hSnap != INVALID_HANDLE_VALUE) {
+        MODULEENTRY32 modEntry;
+        modEntry.dwSize = sizeof(modEntry);
+        if (Module32First(hSnap, &modEntry)) {
+            do {
+                if (!_wcsicmp(modEntry.szModule, modName)) {
+                    exeAddr = (uintptr_t)modEntry.modBaseAddr;
+                    break;
+                }
+            } while (Module32Next(hSnap, &modEntry));
+        }
+    }
+    CloseHandle(hSnap);
+}
+
+bool OpenTargetProcess() {
+    if (processID) return true;
+    std::wstring processName = L"StarCraft.exe";
+
+    // Get process ID
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnapshot == INVALID_HANDLE_VALUE) {
+        throw "Failed to create snapshot!";
+        return 0;
+    }
+
+    PROCESSENTRY32 pe = {0};
+    pe.dwSize = sizeof(pe);
+
+    if (Process32First(hSnapshot, &pe)) {
+        do {
+            if (!_wcsicmp(pe.szExeFile, processName.c_str( ))) {
+                processID = pe.th32ProcessID;
+                break;
+            }
+        } while (Process32Next(hSnapshot, &pe));
+    }
+    CloseHandle(hSnapshot);
+
+    if (processID == 0) {
+        return false;
+    }
+
     hProcess = OpenProcess(PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION, FALSE, processID);
     if (hProcess == NULL) {
         std::cerr << "Failed to open process. Error code: " << GetLastError() << std::endl;
@@ -143,35 +191,8 @@ bool vecwrite(uint32_t address, std::vector<uint8_t> value) {
 
 // Function to find the signature address
 uint32_t find_signature_address() {
-    std::wstring processName = L"StarCraft.exe";
-    DWORD processID = 0;
-
-    // Get process ID
-    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (hSnapshot == INVALID_HANDLE_VALUE) {
-        throw "Failed to create snapshot!";
-        return 0;
-    }
-
-    PROCESSENTRY32 pe = { 0 };
-    pe.dwSize = sizeof(pe);
-
-    if (Process32First(hSnapshot, &pe)) {
-        do {
-            if (!_wcsicmp(pe.szExeFile, processName.c_str())) {
-                processID = pe.th32ProcessID;
-                break;
-            }
-        } while (Process32Next(hSnapshot, &pe));
-    }
-    CloseHandle(hSnapshot);
-
-    if (processID == 0) {
-        throw "Process not found!";
-    }
-
     // Open the process
-    if (!OpenTargetProcess(processID)) {
+    if (!OpenTargetProcess()) {
         return 0;
     }
 
@@ -208,4 +229,5 @@ void init_signature() {
 
 void end_signature() {
     CloseHandle(hProcess);
+    processID = 0;
 }

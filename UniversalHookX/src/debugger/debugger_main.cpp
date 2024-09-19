@@ -28,13 +28,11 @@ Variables getVariables() {
 			process_packets();
 		}
         */
-        end_signature();
         return vars;
     }
 	catch (const char* e) {
         LOG("ERROR on getVariables: %s", e);
-        end_signature( );
-        system("pause");
         throw "error catch on getVariables";
-	}
+        system("pause");
+    }
 }

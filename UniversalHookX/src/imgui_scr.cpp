@@ -1,6 +1,7 @@
 #include "imgui_scr.h"
 #include "memoryRW.h"
 #include "debugger_main.h"
+#include "signature.h"
 #include "console/console.hpp"
 #include <memory>
 
@@ -27,11 +28,17 @@ void DrawLocations(GameData game_data) {
 }
 
 GameData updateGameData( ) {
-    uint32_t exeAddr = getEXEAddr();
+    // from eudplib
+    var_ptr->update_value( );
+
+    // from process
+    uint32_t exeAddr = getEXEAddr( );
     GameData gdata;
     gdata.screen_size_x  = Internal::dwread(exeAddr + 0xB31AC0);
     gdata.screen_size_y  = Internal::dwread(exeAddr + 0xB31AC8);
-    gdata.console_height = Internal::dwread(exeAddr + 0xB31AC4);
+    gdata.console_height = Internal::dwread(exeAddr + 0xB31AC4); // unsued
+    gdata.pillar_size    = Internal::dwread(exeAddr + 0xDE6104);
+    loc_ptr->updateData();
     return gdata;
 }
 
@@ -42,9 +49,10 @@ void onImguiStart() {
     var_ptr = std::make_unique<Variables>(getVariables( ));
 
     // from process
-    OpenTargetProcess( );
-    uint32_t mrgn_addr = findMRGNAddr(var_ptr->mapPath);
-    loc_ptr = std::make_unique<Locations>(mrgn_addr);
+    if (OpenTargetProcess( )) {
+        GetModuleBaseAddress(L"StarCraft.exe");
+    }
+    loc_ptr = std::make_unique<Locations>(findMRGNAddr(var_ptr->mapPath), var_ptr->Locations);
 }
 
 // Your own window and controls
@@ -69,6 +77,7 @@ void StarCraft_UI() {
     ////////////////   update   ////////////////
     var_ptr->update_value( );
     GameData game_data = updateGameData( );
+    loc_ptr->drawLocations(var_ptr, game_data);
 
     ////////////////    loop    ////////////////
     DrawLocations(game_data);
@@ -83,7 +92,7 @@ void StarCraft_UI() {
     ImGui::PopStyleColor( ); // Restore previous style
 
 
-    //  CloseTargetProcess( );
+    //  end_signature( );
     // End the window
     ImGui::End( );
     ///////////////////////////////////////////////////////////////////////////////

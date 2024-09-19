@@ -10,10 +10,13 @@
 
 void init_signature();
 void end_signature();
+bool OpenTargetProcess();
 std::vector<uint8_t> StringToByteVector(std::string& str);
+void GetModuleBaseAddress(const wchar_t* modName);
 
 HANDLE getProcessHandle();
-uint32_t getSignatureAddr();
+uint32_t getEXEAddr();
+    uint32_t getSignatureAddr();
 uint32_t getBaseAddr();
 uint32_t getPacketAddr();
 uint32_t getFuncTableAddr();
@@ -22,7 +25,7 @@ uint32_t getVarDataAddr();
 uint32_t getMRGNTableAddr();
 uint32_t getMRGNDataAddr();
 uint32_t getScreenDataAddr();
-uint32_t getMapPathAddr( );
+uint32_t getMapPathAddr();
 
 std::string strread(uint32_t address, size_t size);
 uint32_t dwread(uint32_t address);

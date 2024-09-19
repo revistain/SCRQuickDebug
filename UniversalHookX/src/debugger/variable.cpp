@@ -47,8 +47,8 @@ Variables::Variables(std::string& func_data, std::string& var_data, std::string&
 	uint32_t loc_idx = 0;
 	uint32_t loc_str_idx = 0;
 	for (size_t i = 0; i < mdata.size(); i += 8) {
-		std::memcpy(&loc_idx, &mdata[i], sizeof(uint32_t));
-		std::memcpy(&loc_str_idx, &mdata[i + 4], sizeof(uint32_t));
+		std::memcpy(&loc_str_idx, &mdata[i], sizeof(uint32_t));
+		std::memcpy(&loc_idx, &mdata[i + 4], sizeof(uint32_t));
 		if (loc_idx > 0xFF) throw "location index bigger than 256";
 		std::cout << std::dec << "one:" << loc_idx << " two:" << loc_str_idx << std::endl;
 		if (loc_str_idx >= strtable.loc_str.size()) Locations[loc_idx] = "";

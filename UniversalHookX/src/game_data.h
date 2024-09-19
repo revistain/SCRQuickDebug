@@ -6,6 +6,7 @@ typedef struct {
     uint32_t screen_size_x;
     uint32_t screen_size_y;
     uint32_t console_height;
+    uint32_t pillar_size;
 }GameData;
 
 #endif

@@ -1,51 +1,54 @@
 #include "drawing.h"
 
-void DrawSquare(float x, float y, float sizeX, float sizeY) {
+void DrawSquare(float x, float y, float sizeX, float sizeY, int seed = 0) {
     ImDrawList* drawList = ImGui::GetWindowDrawList( );
 
     float ratio = getRatio( );
     if (!ratio)
         return;
-    int seed = static_cast<int>(x + y + sizeX + sizeY);
     sizeX = ratio * sizeX;
     sizeY = ratio * sizeY;
 
-    // Define the corners of the square
     ImVec2 topLeft(x, y);
     ImVec2 bottomRight(x + sizeX, y + sizeY);
 
-    // Set color (for example, red)
     srand(seed);
     ImU32 color = IM_COL32(rand( ) % 75 + 180, rand( ) % 75 + 180, rand( ) % 75 + 180, rand( ) % 20 + 10); // RGBA
 
-    // Draw the filled square
     drawList->AddRectFilled(topLeft, bottomRight, color);
 }
 
-void DrawSquareWithLabel(float x, float y, float sizeX, float sizeY, const char* label) {
+void DrawSquareWithLabel(uint32_t pillar_size, float x, float y, float sizeX, float sizeY, const char* label, int seed = 0) {
     ImDrawList* drawList = ImGui::GetWindowDrawList( );
 
     float ratio = getRatio( );
-    if (!ratio)
-        return;
-    int seed = static_cast<int>(x + y + sizeX + sizeY);
+    if (!ratio) return;
+    x = ratio * x + pillar_size;
+    y = ratio * y;
     sizeX = ratio * sizeX;
     sizeY = ratio * sizeY;
+    ImU32 dotColor = IM_COL32(rand( ) % 75 + 180, rand( ) % 75 + 180, rand( ) % 75 + 180, 250);
+    ImU32 squareColor = IM_COL32(rand( ) % 75 + 180, rand( ) % 75 + 180, rand( ) % 75 + 180, rand( ) % 20 + 30); // RGBA
+    ImU32 colorToUse = squareColor;
+    /*
+    // help visualize dot location
+    if (sizeX < 3 && sizeY < 3)
+        colorToUse = dotColor;
+        if (sizeX < 3) sizeX = 3;
+        else if (sizeY < 3) sizeY = 3;
+    else 
+        colorToUse = squareColor;
+    */
 
-    // Define the corners of the square
     ImVec2 topLeft(x, y);
     ImVec2 bottomRight(x + sizeX, y + sizeY);
 
-    // Set color for the square (e.g., red)
     srand(seed);
-    ImU32 squareColor = IM_COL32(rand( ) % 75 + 180, rand( ) % 75 + 180, rand( ) % 75 + 180, rand( ) % 20 + 30); // RGBA
-    drawList->AddRectFilled(topLeft, bottomRight, squareColor);
+    drawList->AddRectFilled(topLeft, bottomRight, colorToUse);
 
-    // Calculate label position (centered)
     ImVec2 labelSize = ImGui::CalcTextSize(label);
-    ImVec2 labelPos(x + 20, y + 10);
+    ImVec2 labelPos(x + 6, y + 4);
 
-    // Set color for the text (e.g., white)
     ImU32 textColor = IM_COL32(255, 255, 255, 255); // RGBA
     drawList->AddText(labelPos, textColor, label);
 }
