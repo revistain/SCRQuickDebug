@@ -1,9 +1,24 @@
 #include "memoryRW.h"
 
+std::string getFileName(const std::string& filePath, bool path) {
+    // Find the last occurrence of the directory separator
+    size_t lastSlashPos = filePath.find_last_of("/\\");
+
+    // Extract the file name using substring
+    if (lastSlashPos != std::string::npos) {
+        if (path) return filePath.substr(0, lastSlashPos + 1);
+        else return filePath.substr(lastSlashPos + 1);
+    }
+    return filePath; // If no slash is found, return the whole path
+}
 
 uint32_t findMRGNAddr(std::string map_path) {
-    std::vector<uint8_t> signature = StringToByteVector(map_path);
+    std::string file_name = getFileName(map_path, false);
+    std::string file_path = getFileName(map_path, true);
+    std::cout << "founding path::" << file_path << " file name: " << file_name << "\n";
+    std::vector<uint8_t> signature = StringToByteVector(file_name);
     std::vector<uint32_t> foundAddresses = Internal::searchMemory(getProcessHandle( ), signature);
+    std::cout << "findfindfind\n";
     try {
         uint32_t mrgn_base_addr = Internal::choosePathAddr(foundAddresses);
         std::cout << "MRGN FOUND AT 0x" << std::hex << mrgn_base_addr << "\n";
@@ -23,10 +38,6 @@ namespace Internal {
     }
 
     bool ReadMemory(LPCVOID address, SIZE_T length, BYTE* buffer) {
-        if (!IsAddressAccessible(address, length)) {
-            return false;
-        }
-
         SIZE_T bytesRead;
         return ReadProcessMemory(getProcessHandle( ), address, buffer, length, &bytesRead) && bytesRead == length;
     }
@@ -153,10 +164,7 @@ namespace Internal {
         buildBadCharTable(signature);
         while (address < maxAddress) {
             if (VirtualQueryEx(hProcess, address, &mbi, sizeof(mbi)) == sizeof(mbi)) {
-                if (mbi.State == MEM_COMMIT &&
-                    (mbi.Protect == PAGE_READWRITE ||
-                     mbi.Protect == PAGE_READONLY ||
-                     mbi.Protect == PAGE_EXECUTE_READ)) {
+                if (mbi.Protect == PAGE_READWRITE) {
 
                     SIZE_T regionSize = mbi.RegionSize;
                     std::vector<uint8_t> buffer = readProcessMemory(hProcess, mbi.BaseAddress, regionSize);

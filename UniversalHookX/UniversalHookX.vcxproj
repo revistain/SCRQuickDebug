@@ -287,6 +287,9 @@
     <ClInclude Include="src\ratio.h" />
     <ClInclude Include="src\utils\utils.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Font Include="bin\Kostar.ttf" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

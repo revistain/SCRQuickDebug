@@ -92,4 +92,7 @@
     <ClInclude Include="src\game_data.h" />
     <ClInclude Include="src\memoryRW.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Font Include="bin\Kostar.ttf" />
+  </ItemGroup>
 </Project>

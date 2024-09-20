@@ -11,12 +11,6 @@ ID3D11DeviceContext* g_pd3dDeviceContext = NULL;
 std::unique_ptr<Variables> var_ptr;
 std::unique_ptr<Locations> loc_ptr;
 
-void addLocation(uint32_t screen_top,   uint32_t screen_left,
-                 uint32_t screen_width, uint32_t screen_height,
-                 uint32_t loc_top,      uint32_t loc_left,
-                 uint32_t loc_width,    uint32_t loc_height) {
-
-}
 
 void DrawLocations(GameData game_data) {
     uint32_t screen_top  = var_ptr->screenTL[0];
@@ -49,10 +43,11 @@ void onImguiStart() {
     var_ptr = std::make_unique<Variables>(getVariables( ));
 
     // from process
+    initFonts( );
     if (OpenTargetProcess( )) {
         GetModuleBaseAddress(L"StarCraft.exe");
     }
-    loc_ptr = std::make_unique<Locations>(findMRGNAddr(var_ptr->mapPath), var_ptr->Locations);
+    loc_ptr = std::make_unique<Locations>(findMRGNAddr("GongNkdfhLpZmqWnRbZlfhInbpQYtZBwjeOqmPlW"), var_ptr->Locations);
 }
 
 // Your own window and controls

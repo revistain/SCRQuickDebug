@@ -1,5 +1,17 @@
 #include "drawing.h"
 
+ImFont* Kostart3;
+ImFont* Kostart5;
+ImFont* Kostart8;
+ImFont* Kostart10;
+ImFont* Kostart15;
+void initFonts() {
+    //Kostart3 = ImGui::GetIO( ).Fonts->AddFontFromFileTTF("C:\\Users\\pc\\Desktop\\UniversalHookX-main\\UniversalHookX-main\\UniversalHookX\\bin\\Kostar.ttf", 3.0f);
+    //Kostart8 = ImGui::GetIO( ).Fonts->AddFontFromFileTTF("C:\\Users\\pc\\Desktop\\UniversalHookX-main\\UniversalHookX-main\\UniversalHookX\\bin\\Kostar.ttf", 8.0f);
+    //Kostart10 = ImGui::GetIO( ).Fonts->AddFontFromFileTTF("C:\\Users\\pc\\Desktop\\UniversalHookX-main\\UniversalHookX-main\\UniversalHookX\\bin\\Kostar.ttf", 10.0f);
+    //Kostart15 = ImGui::GetIO( ).Fonts->AddFontFromFileTTF("C:\\Users\\pc\\Desktop\\UniversalHookX-main\\UniversalHookX-main\\UniversalHookX\\bin\\Kostar.ttf", 15.0f);
+}
+
 void DrawSquare(float x, float y, float sizeX, float sizeY, int seed = 0) {
     ImDrawList* drawList = ImGui::GetWindowDrawList( );
 

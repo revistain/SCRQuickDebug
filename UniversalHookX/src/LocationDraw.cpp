@@ -27,7 +27,6 @@ void Locations::updateData() {
     }
 }
 
-
 ///////////////////////////////////
 Locations::Locations(uint32_t _mrgn_addr, std::vector<std::string> _location_labels) :
     mrgn_addr(_mrgn_addr), screen_center_x(0), screen_center_y(0), screen_top(0), screen_left(0), location_labels(_location_labels) {

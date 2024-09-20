@@ -6,5 +6,4 @@
 #include "./console/console.hpp"
 
 float getRatio( );
-// uint32_t getPillar(uint32_t width);
 #endif

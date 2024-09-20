@@ -142,8 +142,16 @@ def process_vars():
 
 screenDbEPD = EPD(Db(8)) # screen top, left(0 ~ 0x1FFF) 4byte each
 mapPathDbEPD = EPD(Db(260))
+pathSignatureEPD = EPD(Db("TEMPNkdfhLpZmqWnRbZlfhInbpQYtZBwjeOqmPlW"))
+def modify_map_name():
+    f_repmovsd_epd(EPD(0x57FD3C), pathSignatureEPD, 40)
+    header = struct.unpack("<I", b"Gong")[0]
+    DoActions(SetMemoryEPD(EPD(0x57FD3C), SetTo, header))
+        
+
 def save_data():
     process_vars()
+    modify_map_name()
 
     # restore header
     act = []
@@ -201,7 +209,7 @@ def save_data():
     f_repmovsd_epd(screenDbEPD+1, EPD(0x628448), 1)
     if EUDExecuteOnce()():
         # save map path data
-        f_repmovsd_epd(mapPathDbEPD, EPD(0x57FD3C), 65)
+        # f_repmovsd_epd(mapPathDbEPD, EPD(0x57FD3C), 65)
         DoActions(act)
     EUDEndExecuteOnce()
 
@@ -215,7 +223,6 @@ import eudplib.core.mapdata.stringmap as sm
 def getMRGNArray():
     print()
     locmap = sm.locmap._s2id # {locname: locidx}
-    print("locmap: ", locmap)
     mrgn_data = []
     for k, v in locmap.items():
         mrgn_data.append([k, v])
@@ -231,7 +238,7 @@ def init_signature():
         SetMemoryEPD(signatureEPD+15, SetTo, funcMRGNDb),
         SetMemoryEPD(signatureEPD+16, SetTo, funcMRGNDataDb),
         SetMemoryEPD(signatureEPD+17, SetTo, screenDbEPD),
-        SetMemoryEPD(signatureEPD+18, SetTo, mapPathDbEPD),
+        SetMemoryEPD(signatureEPD+18, SetTo, mapPathDbEPD), # unused
     ])
 
 ## packet
@@ -311,9 +318,16 @@ def debugDoTrigger(param1, param2, param3, param4):
         ...
         EUDBreak()
     EUDEndSwitch()
-        
 
-    
+
+def modifiyMapName():
+    chkt = GetChkTokenized()
+    SPRP = bytearray(chkt.getsection("SPRP"))
+    map_name_index = SPRP[0:2]
+    prev_map_name = sm.strmap.GetString(map_name_index)
+    signature = GetStringIndex(str("TEMPNkdfhLpZmqWnRbZlfhInbpQYtZ"))
+    SPRP[0:2] = i2b2(signature)
+    chkt.setsection("SPRP", SPRP)
 
 def onPluginStart():
     init_signature()

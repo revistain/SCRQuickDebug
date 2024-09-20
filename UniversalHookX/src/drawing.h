@@ -9,6 +9,7 @@
 #include "./console/console.hpp"
 #include "ratio.h"
 
+void initFonts( );
 void DrawSquare(float x, float y, float sizeX, float sizeY, int seed);
 void DrawSquareWithLabel(uint32_t pillar_size, float x, float y, float sizeX, float sizeY, const char* label, int seed);
 
