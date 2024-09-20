@@ -285,6 +285,7 @@
     <ClInclude Include="src\memoryRW.h" />
     <ClInclude Include="src\menu\menu.hpp" />
     <ClInclude Include="src\ratio.h" />
+    <ClInclude Include="src\unittable.h" />
     <ClInclude Include="src\utils\utils.hpp" />
   </ItemGroup>
   <ItemGroup>

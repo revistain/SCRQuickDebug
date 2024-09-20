@@ -91,6 +91,7 @@
     <ClInclude Include="src\include\debugger_main.h" />
     <ClInclude Include="src\game_data.h" />
     <ClInclude Include="src\memoryRW.h" />
+    <ClInclude Include="src\unittable.h" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="bin\Kostar.ttf" />
