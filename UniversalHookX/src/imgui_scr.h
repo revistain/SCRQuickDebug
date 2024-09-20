@@ -13,4 +13,5 @@
 #include "LocationDraw.h"
 
 void StarCraft_UI();
+void Debug_UI();
 #endif

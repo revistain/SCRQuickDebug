@@ -12,11 +12,14 @@ void init_signature();
 void end_signature();
 bool OpenTargetProcess();
 std::vector<uint8_t> StringToByteVector(std::string& str);
-void GetModuleBaseAddress(const wchar_t* modName);
+uint32_t GetModuleBaseAddress(const wchar_t* modName);
 
 HANDLE getProcessHandle();
 uint32_t getEXEAddr();
-    uint32_t getSignatureAddr();
+void setEXEAddr(uint32_t paddr);
+uint32_t getUnittableAddr( );
+void setUnittableAddr(uint32_t paddr);
+uint32_t getSignatureAddr();
 uint32_t getBaseAddr();
 uint32_t getPacketAddr();
 uint32_t getFuncTableAddr();

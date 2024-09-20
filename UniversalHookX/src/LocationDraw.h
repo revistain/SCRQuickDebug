@@ -15,7 +15,6 @@ public:
     uint32_t top, left, down, right;
     std::string label;
 
-    Location(uint8_t _index, uint32_t _top, uint32_t _left, uint32_t _down, uint32_t _right);
     Location(uint8_t _index, const std::vector<uint8_t>& data);
     void update(const std::vector<uint8_t>& data);
 };

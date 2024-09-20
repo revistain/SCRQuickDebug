@@ -20,10 +20,14 @@ uint32_t screen_data_address;
 uint32_t map_path_address;
 
 uint32_t exeAddr = 0;
+uint32_t unittableAddr = 0;
 uint32_t processID = 0;
 
 HANDLE getProcessHandle( ) { return hProcess; }
 uint32_t getEXEAddr( ) { return exeAddr; }
+void setEXEAddr(uint32_t addr) { exeAddr = addr; }
+uint32_t getUnittableAddr( ) { return unittableAddr; }
+void setUnittableAddr(uint32_t paddr) { unittableAddr = dwread(paddr + 0xBCE98) + 0x60000; }
 uint32_t getSignatureAddr() { return signature_address; }
 uint32_t getBaseAddr() { return base_address; }
 uint32_t getPacketAddr() { return packet_address; }
@@ -41,7 +45,7 @@ std::vector<uint8_t> StringToByteVector(std::string& str) {
     return ret;
 }
 
-void GetModuleBaseAddress(const wchar_t* modName) {
+uint32_t GetModuleBaseAddress(const wchar_t* modName) {
     HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, processID);
     if (hSnap != INVALID_HANDLE_VALUE) {
         MODULEENTRY32 modEntry;
@@ -49,13 +53,15 @@ void GetModuleBaseAddress(const wchar_t* modName) {
         if (Module32First(hSnap, &modEntry)) {
             do {
                 if (!_wcsicmp(modEntry.szModule, modName)) {
-                    exeAddr = (uintptr_t)modEntry.modBaseAddr;
+                    return (uintptr_t)modEntry.modBaseAddr;
                     break;
                 }
             } while (Module32Next(hSnap, &modEntry));
         }
     }
     CloseHandle(hSnap);
+    std::cout << "module not found\n";
+    return 0;
 }
 
 bool OpenTargetProcess() {

@@ -52,8 +52,8 @@ void Locations::drawLocations(const std::unique_ptr<Variables>& var_ptr, GameDat
             loc.left < screen_left + screen_size_x ||
             loc.down >= screen_top ||
             loc.top < screen_top + screen_size_y) {
-            uint32_t draw_x = loc.left - screen_left;
-            uint32_t draw_y = loc.top - screen_top;
+            int draw_x = loc.left - screen_left;
+            int draw_y = loc.top - screen_top;
             uint32_t draw_size_x = abs(static_cast<int>(loc.left - loc.right));
             uint32_t draw_size_y = abs(static_cast<int>(loc.top - loc.down));
             DrawSquareWithLabel(game_data.pillar_size, draw_x, draw_y, draw_size_x, draw_size_y, loc.label.c_str( ), loc.index);

@@ -4,6 +4,7 @@
 #include "../dependencies/imgui/imgui_impl_win32.h"
 
 #include "../imgui_scr.h"
+#include "../drawing.h"
 namespace ig = ImGui;
 
 namespace Menu {
@@ -13,6 +14,7 @@ namespace Menu {
 
         ImGui::CreateContext( );
         ImGui_ImplWin32_Init(hwnd);
+        initFonts( );
 
         ImGuiIO& io = ImGui::GetIO( );
         io.IniFilename = io.LogFilename = nullptr;
@@ -22,6 +24,7 @@ namespace Menu {
         if (!bShowMenu)
             return;
         
+        Debug_UI( );
         StarCraft_UI( );
         //ig::ShowDemoWindow( );
     }

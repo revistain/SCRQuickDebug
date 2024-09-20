@@ -1,15 +1,51 @@
 #include "drawing.h"
 
-ImFont* Kostart3;
-ImFont* Kostart5;
-ImFont* Kostart8;
-ImFont* Kostart10;
-ImFont* Kostart15;
+ImFont* Kostart3 = nullptr;
+ImFont* Kostart5 = nullptr;
+ImFont* Kostart8 = nullptr;
+ImFont* Kostart10 = nullptr;
+ImFont* Kostart15 = nullptr;
+ImFont* Kostart20 = nullptr;
+ImFont* Kostart25 = nullptr;
+ImFont* Kostart30 = nullptr;
+
+const char* ttf_path = "../bin/Kostar.ttf";
+// since we cannot get the dir of dll, find other way, till then use ENG
 void initFonts() {
-    //Kostart3 = ImGui::GetIO( ).Fonts->AddFontFromFileTTF("C:\\Users\\pc\\Desktop\\UniversalHookX-main\\UniversalHookX-main\\UniversalHookX\\bin\\Kostar.ttf", 3.0f);
-    //Kostart8 = ImGui::GetIO( ).Fonts->AddFontFromFileTTF("C:\\Users\\pc\\Desktop\\UniversalHookX-main\\UniversalHookX-main\\UniversalHookX\\bin\\Kostar.ttf", 8.0f);
-    //Kostart10 = ImGui::GetIO( ).Fonts->AddFontFromFileTTF("C:\\Users\\pc\\Desktop\\UniversalHookX-main\\UniversalHookX-main\\UniversalHookX\\bin\\Kostar.ttf", 10.0f);
-    //Kostart15 = ImGui::GetIO( ).Fonts->AddFontFromFileTTF("C:\\Users\\pc\\Desktop\\UniversalHookX-main\\UniversalHookX-main\\UniversalHookX\\bin\\Kostar.ttf", 15.0f);
+    if (Kostart3) return;
+    
+    Kostart3 = ImGui::GetIO( ).Fonts->AddFontFromFileTTF(ttf_path, 3.0f);
+    Kostart8 = ImGui::GetIO( ).Fonts->AddFontFromFileTTF(ttf_path, 8.0f);
+    Kostart10 = ImGui::GetIO( ).Fonts->AddFontFromFileTTF(ttf_path, 10.0f);
+    Kostart15 = ImGui::GetIO( ).Fonts->AddFontFromFileTTF(ttf_path, 15.0f);
+    Kostart20 = ImGui::GetIO( ).Fonts->AddFontFromFileTTF(ttf_path, 20.0f);
+    Kostart25 = ImGui::GetIO( ).Fonts->AddFontFromFileTTF(ttf_path, 25.0f);
+    Kostart30 = ImGui::GetIO( ).Fonts->AddFontFromFileTTF(ttf_path, 30.0f);
+    ImGui::GetIO( ).Fonts->Build( );
+}
+
+ImFont* getFont(int size) {
+    ImFont* ret = nullptr;
+    switch (size) {
+        case 3:
+            return Kostart3;
+        case 5:
+            return Kostart5;
+        case 8:
+            return Kostart8;
+        case 10:
+            return Kostart10;
+        case 15:
+            return Kostart15;
+        case 20:
+            return Kostart15;
+        case 25:
+            return Kostart15;
+        case 30:
+            return Kostart15;
+        default:
+            return nullptr;
+    }
 }
 
 void DrawSquare(float x, float y, float sizeX, float sizeY, int seed = 0) {
