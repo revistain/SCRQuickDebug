@@ -14,7 +14,7 @@ namespace Menu {
 
         ImGui::CreateContext( );
         ImGui_ImplWin32_Init(hwnd);
-        initFonts( );
+        // initFonts( );
 
         ImGuiIO& io = ImGui::GetIO( );
         io.IniFilename = io.LogFilename = nullptr;

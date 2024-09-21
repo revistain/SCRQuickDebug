@@ -61,6 +61,17 @@ std::vector<uint8_t> readProcessMemory(HANDLE hProcess, LPCVOID baseAddress, SIZ
     }
 }
 
+uint32_t readDwordProcessMemory(HANDLE hProcess, LPCVOID baseAddress) {
+    uint32_t buffer = 0;
+    SIZE_T bytesRead;
+
+    if (ReadProcessMemory(hProcess, baseAddress, &buffer, 4, &bytesRead)) {
+        return buffer;
+    } else {
+        return buffer;
+    }
+}
+
 bool CheckStringInMemory(HANDLE hProcess, LPCVOID foundAddress) {
     char buffer[5] = {0};
     SIZE_T bytesRead;

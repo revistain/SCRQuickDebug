@@ -13,13 +13,6 @@ ID3D11DeviceContext* g_pd3dDeviceContext = NULL;
 std::unique_ptr<Variables> var_ptr;
 std::unique_ptr<Locations> loc_ptr;
 
-std::string W(const std::wstring& wideStr) {
-    int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, wideStr.c_str( ), -1, nullptr, 0, nullptr, nullptr);
-    std::string utf8Str(sizeNeeded, 0);
-    WideCharToMultiByte(CP_UTF8, 0, wideStr.c_str( ), -1, &utf8Str[0], sizeNeeded, nullptr, nullptr);
-    return utf8Str;
-}
-
 GameData updateGameData( ) {
     // from eudplib
     var_ptr->update_value( );
@@ -47,8 +40,13 @@ void onImguiStart() {
     if (OpenTargetProcess( )) {
         setEXEAddr(GetModuleBaseAddress(L"StarCraft.exe"));
         setUnittableAddr(GetModuleBaseAddress(L"Opengl32.dll"));
+        std::cout << "unittable: 0x" << std::hex << getUnittableAddr( ) << "\n";
+        if (getUnittableAddr( ) == 0x60000) {
+            setUnittableAddr(findUnitableAddr());
+            std::cout << "unittable: 0x" << std::hex << getUnittableAddr( ) << "\n";
+        }
     }
-    loc_ptr = std::make_unique<Locations>(findMRGNAddr("GongNkdfhLpZmqWnRbZlfhInbpQYtZBwjeOqmPlW"), var_ptr->Locations);
+    loc_ptr = std::make_unique<Locations>(findMRGNAddr(), var_ptr->Locations);
 }
 
 // Your own window and controls
@@ -67,10 +65,6 @@ void StarCraft_UI() {
     ImGui::SetNextWindowSize(screenSize);
     ImGui::SetNextWindowPos(ImVec2(0, 0));
 
-    ImFont* pfont = getFont(3);
-    if (pfont)
-        ImGui::PushFont(pfont);
-    ImGui::PushFont(pfont);
     ///////////////////////////////////////////////////////////////////////////////
     // Begin the window
     ImGui::Begin("My Full-Sized Window", nullptr, window_flags);
@@ -91,15 +85,93 @@ void StarCraft_UI() {
     if (ImGui::Button("Click Me")) {
         // Button action
     }
-    ImGui::PopStyleColor( ); // Restore previous style
+
+    // ImGui::PopStyleColor( ); // Restore previous style
 
     ////////////
     ImGuiWindowFlags main_window_flags = ImGuiWindowFlags_AlwaysAutoResize;
     ImGui::Begin("SC:R Debug Window", nullptr, main_window_flags);
-    
-    if (ImGui::Button("Open New Window")) {
-        starcraft_input = false;
+    static int currentPage = 0;
+    ImGui::SameLine( );
+    if (ImGui::Button("Inspect", ImVec2(150, 25))) {
+        currentPage = 0;
     }
+    ImGui::SameLine( );
+    if (ImGui::Button("Trigger", ImVec2(150, 25))) {
+        currentPage = 1;
+    }
+    ImGui::SameLine( );
+    if (ImGui::Button("Settings", ImVec2(150, 25))) {
+        currentPage = 2;
+    }
+    ImGui::Separator( );
+
+    if (currentPage == 0) {
+        static bool is_var_popup_open = false;
+        if (ImGui::Button("Open EUDVariable inspector")) {
+            is_var_popup_open = true;
+        }
+        if (is_var_popup_open) {
+            ImGui::OpenPopup("EUDVariable Popup");
+        }
+
+        // 팝업이 열려 있다면 내용 표시
+        if (ImGui::BeginPopup("EUDVariable Popup", ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("This is a popup.");
+
+            if (ImGui::Button("Close")) {
+                ImGui::CloseCurrentPopup( );
+                is_var_popup_open = false;
+            }
+
+            ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
+            if (ImGui::CollapsingHeader("Popup Content", ImGuiTreeNodeFlags_DefaultOpen)) {
+                if (ImGui::BeginTabBar("EUDVariables tab", tab_bar_flags)) {
+                    if (ImGui::BeginTabItem("EUDVariables")) {
+                        ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
+                        window_flags |= ImGuiWindowFlags_NoScrollWithMouse;
+                        window_flags |= ImGuiWindowFlags_MenuBar;
+                        ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+                        ImGui::BeginChild("ChildR", ImVec2(480, 580), true, window_flags);
+                        if (ImGui::BeginTable("table1", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoHostExtendX)) {
+                            ImGui::TableSetupColumn("Var", ImGuiTableColumnFlags_WidthFixed, 150.0f);
+                            ImGui::TableSetupColumn("previous value", ImGuiTableColumnFlags_WidthFixed, 130.0f);
+                            ImGui::TableSetupColumn("current value", ImGuiTableColumnFlags_WidthFixed, 130.0f);
+                            ImGui::TableHeadersRow( );
+                            for (int row = 0; row < 4; row++) {
+                                ImGui::TableNextRow( );
+                                ImGui::TableSetColumnIndex(0);
+                                ImGui::Text("next: ");
+                                for (int column = 1; column < 3; column++) {
+                                    char buf[260] = "0x";
+                                    ImGui::TableSetColumnIndex(column);
+                                    ImGui::SetNextItemWidth(80);
+                                    ImGui::InputText("", buf, 10, ImGuiInputTextFlags_CharsDecimal);
+                                    // ImGui::Text("Row %d Column %d", row, column);
+                                }
+                            }
+                            ImGui::EndTable( );
+                        }
+                        ImGui::EndChild( );
+                        ImGui::PopStyleVar( );
+                        ImGui::EndTabItem( );
+                    }
+                    if (ImGui::BeginTabItem("pinned")) {
+                        ImGui::Text("This is the Broccoli tab!\nblah blah blah blah blah");
+                        ImGui::EndTabItem( );
+                    }
+                    if (ImGui::BeginTabItem("Cucumber")) {
+                        ImGui::Text("This is the Cucumber tab!\nblah blah blah blah blah");
+                        ImGui::EndTabItem( );
+                    }
+                    ImGui::EndTabBar( );
+                }
+            }
+            ImGui::Separator( );
+            ImGui::EndPopup( );
+        }
+    }
+
     if (ImGui::TreeNode("Location Setting")) { // Using a UTF-8 string
         // This creates a sub-menu node
         if (ImGui::TreeNode("Sub Menu")) {
@@ -122,7 +194,6 @@ void StarCraft_UI() {
 
     //  end_signature( );
     // End the window
-    if (pfont) ImGui::PopFont( );
     ImGui::End( );
     ///////////////////////////////////////////////////////////////////////////////
 }

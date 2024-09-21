@@ -12,20 +12,29 @@ std::string getFileName(const std::string& filePath, bool path) {
     return filePath; // If no slash is found, return the whole path
 }
 
-uint32_t findMRGNAddr(std::string map_path) {
-    std::string file_name = getFileName(map_path, false);
-    std::string file_path = getFileName(map_path, true);
-    std::cout << "founding path::" << file_path << " file name: " << file_name << "\n";
-    std::vector<uint8_t> signature = StringToByteVector(file_name);
+uint32_t findMRGNAddr() {
+    std::string signature_str("GongNkdfhLpZmqWnRbZlfhInbpQYtZBwjeOqmPlW");
+    std::vector<uint8_t> signature = StringToByteVector(signature_str);
     std::vector<uint32_t> foundAddresses = Internal::searchMemory(getProcessHandle( ), signature);
-    std::cout << "findfindfind\n";
     try {
         uint32_t mrgn_base_addr = Internal::choosePathAddr(foundAddresses);
         std::cout << "MRGN FOUND AT 0x" << std::hex << mrgn_base_addr << "\n";
         return mrgn_base_addr;
-    } catch (const char* e) {
+    }
+    catch (const char* e) {
         throw e;
     }
+}
+
+uint32_t findUnitableAddr() {
+    std::vector<uint32_t> foundAddresses = Internal::searchAllocationMemory(getProcessHandle( ));
+    if (foundAddresses.size( ) == 1)
+        return foundAddresses[0];
+    else {
+        std::cout << "couldnt find the unittableaddr\n";
+        return 0;
+    }
+
 }
 
 namespace Internal {
@@ -186,4 +195,61 @@ namespace Internal {
         }
         return foundAddresses;
     }
+    std::vector<uint32_t> searchAllocationMemory(HANDLE hProcess) {
+        SYSTEM_INFO sysInfo;
+        GetSystemInfo(&sysInfo);
+        std::vector<uint32_t> foundAddresses;
+
+        // 시작 주소와 최대 주소를 uintptr_t로 변환하여 연산
+        uintptr_t address = reinterpret_cast<uintptr_t>(sysInfo.lpMinimumApplicationAddress);
+        uintptr_t maxAddress = 0xFFFFFFFF;
+        MEMORY_BASIC_INFORMATION mbi;
+
+        std::cout << std::hex << "start address: 0x" << address << "  end: 0x" << maxAddress << "\n";
+
+        while (address < maxAddress) {
+            if (VirtualQueryEx(hProcess, reinterpret_cast<LPCVOID>(address), &mbi, sizeof(mbi)) == sizeof(mbi)) {
+                if (mbi.Protect == PAGE_READWRITE) {
+                    SIZE_T regionSize = mbi.RegionSize;
+                    if (regionSize != 0x120000) {
+                        address += regionSize;
+                        continue;
+                    }
+                    uint32_t buffer = readDwordProcessMemory(hProcess, reinterpret_cast<LPCVOID>(address + 4));
+                    std::cout << std::hex << "Address: 0x" << address << "\tbuf : 0x " << buffer << "\n ";
+                    if (buffer == 0x11FFF0) {
+                        foundAddresses.push_back(address + 8);
+                        address += regionSize;
+                        continue;
+                    }
+
+                    if (buffer != 0) {
+                        if (buffer == 0xABEDACDE) {
+                            std::cout << "buffer hit one\n";
+                            buffer = readDwordProcessMemory(hProcess, reinterpret_cast<LPCVOID>(address + 8 + 336));
+                            if (buffer == 0xBEDACDEA) {
+                                std::cout << "buffer hit two\n";
+                                buffer = readDwordProcessMemory(hProcess, reinterpret_cast<LPCVOID>(address + 8 + 336 * 2));
+                                if (buffer == 0xEDACDEAB) {
+                                    std::cout << "buffer hit three\n";
+                                    buffer = readDwordProcessMemory(hProcess, reinterpret_cast<LPCVOID>(address + 8 + 336 * 3));
+                                    if (buffer == 0xDACDEABE) {
+                                        std::cout << "buffer hit four\n";
+                                        foundAddresses.push_back(static_cast<uint32_t>(address+8));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 다음 메모리 영역으로 이동
+                address = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + mbi.RegionSize;
+            } else {
+                break;
+            }
+        }
+        return foundAddresses;
+    }
+
 } // namespace Internal

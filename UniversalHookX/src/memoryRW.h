@@ -10,7 +10,8 @@
 #include "signature.h"
 
 uint32_t getEXEAddr( );
-uint32_t findMRGNAddr(std::string map_path);
+uint32_t findMRGNAddr();
+uint32_t findUnitableAddr( );
 
 namespace Internal {
     std::vector<uint8_t> vecread(uint32_t address, size_t size);
@@ -23,6 +24,7 @@ namespace Internal {
     bool bwrite(uint32_t address, uint8_t value);
     uint32_t choosePathAddr(const std::vector<uint32_t> foundaddresses);
     std::vector<uint32_t> searchMemory(HANDLE hProcess, std::vector<uint8_t>& signature);
+    std::vector<uint32_t> searchAllocationMemory(HANDLE hProcess);
 } // namespace Internal
 
 #endif
