@@ -3,6 +3,7 @@
 #include "debugger_main.h"
 #include "signature.h"
 #include "console/console.hpp"
+#include <format>
 #include <memory>
 #include <codecvt>
 #include <locale>
@@ -10,9 +11,14 @@
 // Global variables
 ID3D11Device* g_pd3dDevice = NULL;
 ID3D11DeviceContext* g_pd3dDeviceContext = NULL;
+
 std::unique_ptr<Variables> var_ptr;
 std::unique_ptr<Locations> loc_ptr;
-
+bool starcraft_input = true;
+static bool is_var_popup_open = false;
+static bool isLocationVisible[255];
+std::vector<uint32_t> var_buf;
+std::vector<char> var_pin;
 GameData updateGameData( ) {
     // from eudplib
     var_ptr->update_value( );
@@ -31,9 +37,13 @@ GameData updateGameData( ) {
 
 void onImguiStart() {
     if (var_ptr) return;
-    LOG("=========== var_ptr: 0x%08X =============\n", var_ptr.get());
     // from eudplib
     var_ptr = std::make_unique<Variables>(getVariables( ));
+    uint32_t var_buf_size = 0;
+    for (auto& var_pair : var_ptr->func_var) var_buf_size += (var_pair.second.size() * 2);
+    var_buf.resize(var_buf_size);
+    var_pin.resize(var_buf_size / 2);
+    std::cout << "var_buf_size: " << std::dec << var_buf_size << "\n";
 
     // from process
     // initFonts( );
@@ -50,9 +60,6 @@ void onImguiStart() {
 }
 
 // Your own window and controls
-bool starcraft_input = true;
-static bool is_var_popup_open = false;
-static bool isLocationVisible[255];
 void StarCraft_UI( ) {
     ImVec2 screenSize = ImGui::GetIO( ).DisplaySize;
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove |
@@ -95,22 +102,25 @@ void StarCraft_UI( ) {
     ImGui::Begin("SC:R Debug Window", nullptr, main_window_flags);
     static int currentPage = 0;
     ImGui::SameLine();
-    if (ImGui::Button("Inspect", ImVec2(150, 25))) {
+    if (ImGui::Button("Inspect", ImVec2(160, 25))) {
         currentPage = 0;
     }
     ImGui::SameLine();
-    if (ImGui::Button("Trigger", ImVec2(150, 25))) {
+    if (ImGui::Button("Trigger", ImVec2(160, 25))) {
         currentPage = 1;
     }
     ImGui::SameLine();
-    if (ImGui::Button("Settings", ImVec2(150, 25))) {
+    if (ImGui::Button("Settings", ImVec2(160, 25))) {
         currentPage = 2;
     }
     ImGui::Separator();
 
     if (currentPage == 0) {
         if (ImGui::Button("Open EUDVariable inspector")) {
-            is_var_popup_open = true;
+            if (is_var_popup_open) {
+                ImGui::SetWindowFocus("EUDVariable Inspector");
+            }
+            else is_var_popup_open = true;
         }
         
     }
@@ -119,27 +129,27 @@ void StarCraft_UI( ) {
         if (ImGui::CollapsingHeader("Location Settting", ImGuiTreeNodeFlags_Framed)) {
             if (ImGui::TreeNode("visiblilty")) {
                 ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
-                ImGui::BeginChild("ChildLocV", ImVec2(500, ImGui::GetTextLineHeight( ) * 30), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysVerticalScrollbar);
+                ImGui::BeginChild("ChildLocV", ImVec2(528, ImGui::GetTextLineHeight( ) * 38), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysVerticalScrollbar);
                 if (ImGui::BeginTable("table1", 8, ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoHostExtendX)) {
-                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 80.0f);
-                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 20);
-                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 80.0f);
-                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 20);
-                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 80.0f);
-                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 20);
-                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 80.0f);
-                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 20);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 85.0f);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 22);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 85.0f);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 22);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 85.0f);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 22);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 85.0f);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 22);
                     for (int row = 0; row < 64; row++) {
                         ImGui::TableNextRow( );
                         ImGui::TableSetColumnIndex(0);
                         for (int column = 0; column < 8; column+=2) {
                             if (row * 4 + column / 2 > 255)
                                 break;
-                                ImGui::TableSetColumnIndex(column);
-                            // ImGui::SetNextItemWidth(80);
+                            ImGui::TableSetColumnIndex(column);
                             if (loc_ptr->locations[row * 4 + column / 2].label == "") {
                                 ImGui::Text("Location %d", row * 4 + column / 2 + 1);
-                            } else {
+                            }
+                            else {
                                 ImGui::Text(loc_ptr->locations[row * 4 + column / 2].label.c_str( ));
                             }
                         }
@@ -160,70 +170,96 @@ void StarCraft_UI( ) {
         }
     }
 
-    if (is_var_popup_open)
-        ImGui::SetNextWindowSize(ImVec2(500, 680));
-    if (is_var_popup_open && ImGui::Begin("EUDVariable Popup", nullptr, ImGuiWindowFlags_None)) {
+    if (is_var_popup_open) { ImGui::SetNextWindowSize(ImVec2(490, 600)); }
+    if (is_var_popup_open && ImGui::Begin("EUDVariable Inspector", nullptr, ImGuiWindowFlags_None)) {
         static bool isHex = true;
-            ImGui::BeginChild("tab_child", ImVec2(480, 580), true, window_flags);
-            ImGui::Text("This is a popup.");
-            if (ImGui::Button("Close")) { is_var_popup_open = false; }
+        ImGui::Text("This is a popup.");
+        if (ImGui::Button("Close")) { is_var_popup_open = false; }
 
-            ImGuiTabBarFlags tab_bar_flags = ImGuiWindowFlags_AlwaysAutoResize;
-            if (ImGui::BeginTabBar("EUDVariables tab", tab_bar_flags)) {
-                if (ImGui::BeginTabItem("EUDVariables")) {
-                    ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
-                    window_flags |= ImGuiWindowFlags_NoScrollWithMouse;
-                    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
-                    ImGui::BeginChild("var_child", ImVec2(480, 580), true, window_flags);
+        ImGuiTabBarFlags tab_bar_flags = ImGuiWindowFlags_AlwaysAutoResize;
+        if (ImGui::BeginTabBar("EUDVariables tab", tab_bar_flags)) {
+            if (ImGui::BeginTabItem("EUDVariables")) {
+                ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
+                window_flags |= ImGuiWindowFlags_NoScrollWithMouse;
+                ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+                ImGui::BeginChild("var_child", ImVec2(470, 480), true, window_flags);
 
-                    int var_table_idx = 0;
-                    for (auto& func_var : var_ptr->func_var) {
-                        if (ImGui::TreeNode((void*)(intptr_t)var_table_idx, "%s", func_var.first.c_str( ))) {
-                            ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoHostExtendX;
-                            if (ImGui::BeginTable(func_var.first.c_str( ), 3, table_flags)) {
-                                ImGui::TableSetupColumn("Var", ImGuiTableColumnFlags_WidthFixed, 150.0f);
-                                ImGui::TableSetupColumn("previous value", ImGuiTableColumnFlags_WidthFixed, 130.0f);
-                                ImGui::TableSetupColumn("current value", ImGuiTableColumnFlags_WidthFixed, 130.0f);
-                                ImGui::TableHeadersRow( );
-                                for (int row = 0; row < func_var.second.size( ); row++) {
-                                    ImGui::TableNextRow( );
-                                    ImGui::TableSetColumnIndex(0);
-                                    ImGui::Text(var_ptr->strtable.var_str[func_var.second[row].get().var_index].c_str());
+                int var_idx = 0;
+                int var_table_idx = 0;
+                for (auto& func_var : var_ptr->func_var) {
+                    if (ImGui::TreeNode((void*)(intptr_t)var_table_idx, "%s", func_var.first.c_str( ))) {
+                        ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoHostExtendX;
+                        if (ImGui::BeginTable(func_var.first.c_str( ), 4, table_flags)) {
+                            ImGui::TableSetupColumn("EUDVariable", ImGuiTableColumnFlags_WidthFixed, 130.0f);
+                            ImGui::TableSetupColumn("previous", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                            ImGui::TableSetupColumn("current", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                            ImGui::TableSetupColumn("Pin", ImGuiTableColumnFlags_WidthFixed, 26.0f);
+                            ImGui::TableHeadersRow( );
+                            for (int row = 0; row < func_var.second.size( ); row++) {
+                                ImGui::TableNextRow( );
+                                ImGui::TableSetColumnIndex(0);
+                                ImGui::Text(var_ptr->strtable.var_str[func_var.second[row].get().var_index].c_str());
 
-                                    // previous value
-                                    ImGui::TableSetColumnIndex(1);
-                                    ImGui::SetNextItemWidth(80);
-                                    if(isHex) ImGui::Text("0x%08X", row);
-                                    else 
+                                // previous value
+                                ImGui::TableSetColumnIndex(1);
+                                if (isHex)
+                                    ImGui::Text("0x%08X", var_buf[var_idx]);
+                                else
+                                    ImGui::Text("%d", var_buf[var_idx]);
 
-                                    // current value
-                                    char buf[260] = "";
-                                    ImGui::TableSetColumnIndex(1);
-                                    ImGui::SetNextItemWidth(80);
-                                    ImGui::InputText("", buf, 10, ImGuiInputTextFlags_CharsDecimal);
-                                    // ImGui::Text("Row %d Column %d", row, column);
+                                // current value
+                                ImGui::TableSetColumnIndex(2);
+                                var_buf[var_idx + 1] = func_var.second[row].get( ).value;
+                                if (isHex) {
+                                    char buf[11];
+                                    snprintf(buf, sizeof(buf), "0x%08X", var_buf[var_idx + 1]); // 16진수로 변환
+                                    ImGui::SetNextItemWidth(90);
+                                    ImGui::InputText(std::format("##var_hex{}", var_idx).c_str(), buf, sizeof(buf), ImGuiInputTextFlags_CharsHexadecimal);
+                                    if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                        std::cout << "foucus\n";
+                                        std::cout << "buf: " << std::hex << buf << " / " << static_cast<uint32_t>(std::stoul(buf+2, nullptr, 16)) << "\n";
+                                        dwwrite(func_var.second[row].get( ).address, static_cast<uint32_t>(std::stoul(buf+2, nullptr, 16)));
                                     }
                                 }
-                                ImGui::EndTable( );
-                                ImGui::PopStyleVar( );
+                                else {
+                                    char buf[20];
+                                    snprintf(buf, sizeof(buf), "%d", var_buf[var_idx + 1]); // 10진수로 변환
+                                    ImGui::SetNextItemWidth(90);
+                                    ImGui::InputText(std::format("##var_dec{}", var_idx).c_str( ), buf, sizeof(buf), ImGuiInputTextFlags_CharsDecimal);
+                                    if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                        std::cout << "foucus\n";
+                                        dwwrite(func_var.second[row].get( ).address, static_cast<uint32_t>(std::stoul(buf, nullptr, 10)));
+
+                                    }
+                                }
+
+                                // pinned
+                                ImGui::TableSetColumnIndex(3);
+                                ImGui::SetNextItemWidth(25);
+                                ImGui::Checkbox(std::format("##pin{}", var_idx).c_str(), reinterpret_cast<bool*>(&var_pin[var_idx / 2]));
+                                    
+                                var_idx += 2;
                             }
-                            ImGui::TreePop( );
+                            ImGui::EndTable( );
+                            ImGui::PopStyleVar( );
                         }
-                        var_table_idx++;
+                        ImGui::TreePop( );
                     }
-                    ImGui::EndChild( );
-                    ImGui::EndTabItem( );
-                    if (ImGui::BeginTabItem("pinned")) {
-                        ImGui::Text("This is the Broccoli tab!\nblah blah blah blah blah");
-                        ImGui::EndTabItem( );
-                    }
-                    ImGui::EndTabBar( );
+                    var_table_idx++;
                 }
+                ImGui::EndChild( );
+                ImGui::EndTabItem( );
             }
-            ImGui::EndChild( );
-            ImGui::Separator( );
-            ImGui::End( );
+            if (ImGui::BeginTabItem("pinned")) {
+                ImGui::Text("This is the Broccoli tab!\nblah blah blah blah blah");
+                ImGui::EndTabItem( );
+            }
+            
+            ImGui::EndTabBar( );
         }
+        // ImGui::Separator( );
+        ImGui::End( );
+    }
 
     //  end_signature( );
     // End the window
