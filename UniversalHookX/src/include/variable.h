@@ -27,6 +27,7 @@ public:
 	StringTable strtable;
 	std::vector<EUDVariable> eudvars;
 	std::vector<std::string> Locations;
+    std::vector<std::pair<std::string, std::vector<std::reference_wrapper<EUDVariable>>>> func_var;
     uint32_t screenTL[2];
     std::string mapPath;
 	

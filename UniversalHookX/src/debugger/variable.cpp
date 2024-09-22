@@ -55,8 +55,26 @@ Variables::Variables(std::string& func_data, std::string& var_data, std::string&
 		else Locations[loc_idx] = strtable.loc_str[loc_str_idx];
 	}
 
-     uint32_t map_path_addr = getMapPathAddr();
+     uint32_t map_path_addr = getMapPathAddr(); // unused
      mapPath = strread(map_path_addr, 260);
+
+	 for (auto& var : eudvars) {
+         bool pushed = false;
+         for (auto& func : func_var) {
+             std::string& func_string = func.first;
+             if (func.first == strtable.func_str[var.func_index]) {
+			 	 func.second.push_back(var);
+                 pushed = true;
+			 	 break;
+			 }
+		 }
+         if (!pushed) {
+            std::vector<std::reference_wrapper<EUDVariable>> eudvarvec;
+            eudvarvec.push_back(var);
+            auto eudpair = std::pair<std::string, std::vector<std::reference_wrapper<EUDVariable>>>(strtable.func_str[var.func_index], eudvarvec);
+            func_var.push_back(eudpair);
+		 }
+	 }
 }
 
 Variables init_variables() {

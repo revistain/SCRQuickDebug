@@ -51,7 +51,9 @@ void onImguiStart() {
 
 // Your own window and controls
 bool starcraft_input = true;
-void StarCraft_UI() {
+static bool is_var_popup_open = false;
+static bool isLocationVisible[255];
+void StarCraft_UI( ) {
     ImVec2 screenSize = ImGui::GetIO( ).DisplaySize;
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove |
                                     ImGuiWindowFlags_NoResize |
@@ -77,10 +79,10 @@ void StarCraft_UI() {
     loc_ptr->drawLocations(var_ptr, game_data);
 
     ////////////////    loop    ////////////////
-    
+
 
     // Set the background color to fully transparent
-    // ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0, 0, 0, 0)); // Fully transparent
+        // ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0, 0, 0, 0)); // Fully transparent
     ImGui::Text("Hello, World!");                                 // You can add other UI elements here
     if (ImGui::Button("Click Me")) {
         // Button action
@@ -89,108 +91,139 @@ void StarCraft_UI() {
     // ImGui::PopStyleColor( ); // Restore previous style
 
     ////////////
-    ImGuiWindowFlags main_window_flags = ImGuiWindowFlags_AlwaysAutoResize;
+    ImGuiWindowFlags main_window_flags = ImGuiWindowFlags_AlwaysAutoResize ;
     ImGui::Begin("SC:R Debug Window", nullptr, main_window_flags);
     static int currentPage = 0;
-    ImGui::SameLine( );
+    ImGui::SameLine();
     if (ImGui::Button("Inspect", ImVec2(150, 25))) {
         currentPage = 0;
     }
-    ImGui::SameLine( );
+    ImGui::SameLine();
     if (ImGui::Button("Trigger", ImVec2(150, 25))) {
         currentPage = 1;
     }
-    ImGui::SameLine( );
+    ImGui::SameLine();
     if (ImGui::Button("Settings", ImVec2(150, 25))) {
         currentPage = 2;
     }
-    ImGui::Separator( );
+    ImGui::Separator();
 
     if (currentPage == 0) {
-        static bool is_var_popup_open = false;
         if (ImGui::Button("Open EUDVariable inspector")) {
             is_var_popup_open = true;
         }
-        if (is_var_popup_open) {
-            ImGui::OpenPopup("EUDVariable Popup");
-        }
-
-        // 팝업이 열려 있다면 내용 표시
-        if (ImGui::BeginPopup("EUDVariable Popup", ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text("This is a popup.");
-
-            if (ImGui::Button("Close")) {
-                ImGui::CloseCurrentPopup( );
-                is_var_popup_open = false;
+        
+    }
+    else if (currentPage == 2) {
+        ImGuiTreeNodeFlags ImGuiTreeNodeFlags_DefaultOpen = 0;
+        if (ImGui::CollapsingHeader("Location Settting", ImGuiTreeNodeFlags_Framed)) {
+            if (ImGui::TreeNode("visiblilty")) {
+                ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+                ImGui::BeginChild("ChildLocV", ImVec2(500, ImGui::GetTextLineHeight( ) * 30), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysVerticalScrollbar);
+                if (ImGui::BeginTable("table1", 8, ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoHostExtendX)) {
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 20);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 20);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 20);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 20);
+                    for (int row = 0; row < 64; row++) {
+                        ImGui::TableNextRow( );
+                        ImGui::TableSetColumnIndex(0);
+                        for (int column = 0; column < 8; column+=2) {
+                            if (row * 4 + column / 2 > 255)
+                                break;
+                                ImGui::TableSetColumnIndex(column);
+                            // ImGui::SetNextItemWidth(80);
+                            if (loc_ptr->locations[row * 4 + column / 2].label == "") {
+                                ImGui::Text("Location %d", row * 4 + column / 2 + 1);
+                            } else {
+                                ImGui::Text(loc_ptr->locations[row * 4 + column / 2].label.c_str( ));
+                            }
+                        }
+                        for (int column = 1; column < 8; column += 2) {
+                            if (row * 4 + column / 2 > 255)
+                                break;
+                            ImGui::TableSetColumnIndex(column);
+                            ImGui::SetNextItemWidth(16);
+                            ImGui::Checkbox("", &isLocationVisible[row * 4 + column / 2]);
+                        }
+                    }
+                    ImGui::EndTable( );
+                    ImGui::EndChild( );
+                    ImGui::PopStyleVar( );
+                    ImGui::EndTabItem( );
+                }
             }
+        }
+    }
 
-            ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
-            if (ImGui::CollapsingHeader("Popup Content", ImGuiTreeNodeFlags_DefaultOpen)) {
-                if (ImGui::BeginTabBar("EUDVariables tab", tab_bar_flags)) {
-                    if (ImGui::BeginTabItem("EUDVariables")) {
-                        ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
-                        window_flags |= ImGuiWindowFlags_NoScrollWithMouse;
-                        window_flags |= ImGuiWindowFlags_MenuBar;
-                        ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
-                        ImGui::BeginChild("ChildR", ImVec2(480, 580), true, window_flags);
-                        if (ImGui::BeginTable("table1", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoHostExtendX)) {
-                            ImGui::TableSetupColumn("Var", ImGuiTableColumnFlags_WidthFixed, 150.0f);
-                            ImGui::TableSetupColumn("previous value", ImGuiTableColumnFlags_WidthFixed, 130.0f);
-                            ImGui::TableSetupColumn("current value", ImGuiTableColumnFlags_WidthFixed, 130.0f);
-                            ImGui::TableHeadersRow( );
-                            for (int row = 0; row < 4; row++) {
-                                ImGui::TableNextRow( );
-                                ImGui::TableSetColumnIndex(0);
-                                ImGui::Text("next: ");
-                                for (int column = 1; column < 3; column++) {
-                                    char buf[260] = "0x";
-                                    ImGui::TableSetColumnIndex(column);
+    if (is_var_popup_open)
+        ImGui::SetNextWindowSize(ImVec2(500, 680));
+    if (is_var_popup_open && ImGui::Begin("EUDVariable Popup", nullptr, ImGuiWindowFlags_None)) {
+        static bool isHex = true;
+            ImGui::BeginChild("tab_child", ImVec2(480, 580), true, window_flags);
+            ImGui::Text("This is a popup.");
+            if (ImGui::Button("Close")) { is_var_popup_open = false; }
+
+            ImGuiTabBarFlags tab_bar_flags = ImGuiWindowFlags_AlwaysAutoResize;
+            if (ImGui::BeginTabBar("EUDVariables tab", tab_bar_flags)) {
+                if (ImGui::BeginTabItem("EUDVariables")) {
+                    ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
+                    window_flags |= ImGuiWindowFlags_NoScrollWithMouse;
+                    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+                    ImGui::BeginChild("var_child", ImVec2(480, 580), true, window_flags);
+
+                    int var_table_idx = 0;
+                    for (auto& func_var : var_ptr->func_var) {
+                        if (ImGui::TreeNode((void*)(intptr_t)var_table_idx, "%s", func_var.first.c_str( ))) {
+                            ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoHostExtendX;
+                            if (ImGui::BeginTable(func_var.first.c_str( ), 3, table_flags)) {
+                                ImGui::TableSetupColumn("Var", ImGuiTableColumnFlags_WidthFixed, 150.0f);
+                                ImGui::TableSetupColumn("previous value", ImGuiTableColumnFlags_WidthFixed, 130.0f);
+                                ImGui::TableSetupColumn("current value", ImGuiTableColumnFlags_WidthFixed, 130.0f);
+                                ImGui::TableHeadersRow( );
+                                for (int row = 0; row < func_var.second.size( ); row++) {
+                                    ImGui::TableNextRow( );
+                                    ImGui::TableSetColumnIndex(0);
+                                    ImGui::Text(var_ptr->strtable.var_str[func_var.second[row].get().var_index].c_str());
+
+                                    // previous value
+                                    ImGui::TableSetColumnIndex(1);
+                                    ImGui::SetNextItemWidth(80);
+                                    if(isHex) ImGui::Text("0x%08X", row);
+                                    else 
+
+                                    // current value
+                                    char buf[260] = "";
+                                    ImGui::TableSetColumnIndex(1);
                                     ImGui::SetNextItemWidth(80);
                                     ImGui::InputText("", buf, 10, ImGuiInputTextFlags_CharsDecimal);
                                     // ImGui::Text("Row %d Column %d", row, column);
+                                    }
                                 }
+                                ImGui::EndTable( );
+                                ImGui::PopStyleVar( );
                             }
-                            ImGui::EndTable( );
+                            ImGui::TreePop( );
                         }
-                        ImGui::EndChild( );
-                        ImGui::PopStyleVar( );
-                        ImGui::EndTabItem( );
+                        var_table_idx++;
                     }
+                    ImGui::EndChild( );
+                    ImGui::EndTabItem( );
                     if (ImGui::BeginTabItem("pinned")) {
                         ImGui::Text("This is the Broccoli tab!\nblah blah blah blah blah");
-                        ImGui::EndTabItem( );
-                    }
-                    if (ImGui::BeginTabItem("Cucumber")) {
-                        ImGui::Text("This is the Cucumber tab!\nblah blah blah blah blah");
                         ImGui::EndTabItem( );
                     }
                     ImGui::EndTabBar( );
                 }
             }
+            ImGui::EndChild( );
             ImGui::Separator( );
-            ImGui::EndPopup( );
+            ImGui::End( );
         }
-    }
-
-    if (ImGui::TreeNode("Location Setting")) { // Using a UTF-8 string
-        // This creates a sub-menu node
-        if (ImGui::TreeNode("Sub Menu")) {
-            ImGui::Text(u8"Sub Item 1");
-            ImGui::Text("Sub Item 2");
-
-            // Create a nested sub-menu node
-            if (ImGui::TreeNode("Nested Sub Menu")) {
-                ImGui::Text("Nested Item 1");
-                ImGui::Text("Nested Item 2");
-                ImGui::TreePop( ); // Close the nested sub menu
-            }
-
-            ImGui::TreePop( ); // Close the sub menu
-        }
-
-        ImGui::TreePop( ); // Close the main menu
-    }
-    ImGui::End( );
 
     //  end_signature( );
     // End the window
