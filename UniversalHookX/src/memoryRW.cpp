@@ -113,7 +113,7 @@ namespace Internal {
         if (WriteMemory(reinterpret_cast<LPVOID>(address), 4, reinterpret_cast<BYTE*>(&value))) {
             return true;
         } else {
-            std::cout << "Error: Failed to write 4bytes to memory.\n";
+            std::cout << "Error: Failed to write " << std::hex << address << " value: " << value << std::dec << " 4bytes from memory.\n ";
             return false;
         }
     }

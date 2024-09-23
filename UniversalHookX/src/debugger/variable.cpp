@@ -2,11 +2,20 @@
 
         
 EUDVariable::EUDVariable(StringTable& string, uint32_t _file_index, uint32_t _func_index,
-    uint32_t _var_index, uint32_t _addr) : address(_addr), value(0) {
+    uint32_t _var_index, uint32_t _addr) : address(_addr), value(0), prev_value(0) {
     file_name = string.str[_file_index];
-    func_name = string.str[_func_index];
+    if (_func_index == -1) { func_name = ""; }
+    else { func_name = string.str[_func_index]; }
     var_name  = string.str[_var_index];
+    std::cout << "var: " << file_name << "@" << func_name << "@@" << var_name << "\n";
+}
 
+EUDVariable::EUDVariable(StringTable& string, uint32_t _file_index, uint32_t _func_index,
+                         uint32_t _var_index, uint32_t _addr, uint32_t _size) : address(_addr), value(_size), prev_value(0) {
+    file_name = string.str[_file_index];
+    if (_func_index == -1) { func_name = ""; }
+    else { func_name = string.str[_func_index]; }
+    var_name = string.str[_var_index];
 }
 
 StringTable::StringTable(std::string& str_data) {
@@ -38,15 +47,13 @@ Variables::Variables(
 		std::memcpy(&addr, &var_data[i + 12], sizeof(uint32_t));
 		eudvars.emplace_back(strtable, file_idx, func_idx, var_idx, base_addr+addr);
 	}
-
-    for (size_t i = 0; i < gvar_data.size( ); i += 16) {
+    for (size_t i = 0; i < gvar_data.size( ); i += 12) {
         std::memcpy(&file_idx, &gvar_data[i], sizeof(uint32_t));
         std::memcpy(&var_idx, &gvar_data[i + 4], sizeof(uint32_t));
         std::memcpy(&addr, &gvar_data[i + 8], sizeof(uint32_t));
-        eudgvars.emplace_back(strtable, file_idx, 0, var_idx, base_addr + addr);
+        eudgvars.emplace_back(strtable, file_idx, -1, var_idx, base_addr + addr);
     }
-
-    for (size_t i = 0; i < arr_data.size( ); i += 16) {
+    for (size_t i = 0; i < arr_data.size( ); i += 20) {
         std::memcpy(&file_idx, &arr_data[i], sizeof(uint32_t));
         std::memcpy(&func_idx, &arr_data[i + 4], sizeof(uint32_t));
         std::memcpy(&var_idx, &arr_data[i + 8], sizeof(uint32_t));
@@ -54,46 +61,112 @@ Variables::Variables(
         std::memcpy(&size, &arr_data[i + 16], sizeof(uint32_t));
         eudarrs.emplace_back(strtable, file_idx, func_idx, var_idx, base_addr + addr, size);
     }
-
-    for (size_t i = 0; i < garr_data.size( ); i += 16) {
-        std::memcpy(&file_idx, &arr_data[i], sizeof(uint32_t));
-        std::memcpy(&func_idx, &arr_data[i + 4], sizeof(uint32_t));
-        std::memcpy(&var_idx, &arr_data[i + 8], sizeof(uint32_t));
-        std::memcpy(&addr, &arr_data[i + 12], sizeof(uint32_t));
-        std::memcpy(&size, &arr_data[i + 16], sizeof(uint32_t));
-        eudgarrs.emplace_back(strtable, file_idx, 0, var_idx, base_addr + addr, size);
+    for (size_t i = 0; i < garr_data.size( ); i += 20) {
+        std::memcpy(&file_idx, &garr_data[i], sizeof(uint32_t));
+        std::memcpy(&func_idx, &garr_data[i + 4], sizeof(uint32_t));
+        std::memcpy(&var_idx, &garr_data[i + 8], sizeof(uint32_t));
+        std::memcpy(&addr, &garr_data[i + 12], sizeof(uint32_t));
+        std::memcpy(&size, &garr_data[i + 16], sizeof(uint32_t));
+        std::cout << "===============\n";
+        std::cout << "file_idx: " << file_idx << "\n";
+        std::cout << "var_idx: " << var_idx << "\n";
+        std::cout << "base_addr + addr: " << base_addr + addr << "\n";
+        std::cout << "size: " << size << "\n";
+        eudgarrs.emplace_back(strtable, file_idx, -1, var_idx, base_addr + addr, size);
         eudgarrs[eudgarrs.size( ) - 1].cgfw_type = strtable.str[func_idx];
     }
 
 	Locations.resize(255);
 	uint32_t loc_str_idx = 0;
 	uint32_t loc_idx = 0;
+    for (size_t i = 0; i < strtable.str.size( ); i++) {
+        std::cout << i << "/ " << strtable.str[i] << "\n";
+    }
+
     for (size_t i = 0; i < mrgn_data.size( ); i += 8) {
-        std::memcpy(&loc_idx, &mrgn_data[i], sizeof(uint32_t));
-        std::memcpy(&loc_str_idx, &mrgn_data[i + 4], sizeof(uint32_t));
-        if (strtable.str[loc_str_idx] == "")  Locations[loc_idx] = "";
-        else Locations[loc_idx] = strtable.str[loc_str_idx];
+        std::memcpy(&loc_str_idx, &mrgn_data[i], sizeof(uint32_t));
+        std::memcpy(&loc_idx, &mrgn_data[i + 4], sizeof(uint32_t));
+        Locations[loc_idx] = strtable.str[loc_str_idx];
 	}
 
+    for (auto& arr : eudgarrs) {
+        bool flag = false;
+        for (auto& file : file_map[arr.file_name]) {
+            if (file.first == arr.func_name) {
+                    flag = true;
+                    file.second.push_back(std::ref(arr));
+            }
+        }
+        if (!flag) {
+            std::vector<std::reference_wrapper<EUDVariable>> obj;
+            obj.push_back(std::ref(arr));
+            file_map[arr.file_name].emplace_back(arr.func_name, obj);
+        }
+    }
+    for (auto& arr : eudgvars) {
+        bool flag = false;
+        for (auto& file : file_map[arr.file_name]) {
+            if (file.first == arr.func_name) {
+                flag = true;
+                file.second.push_back(std::ref(arr));
+            }
+        }
+        if (!flag) {
+            std::vector<std::reference_wrapper<EUDVariable>> obj;
+            obj.push_back(std::ref(arr));
+            file_map[arr.file_name].emplace_back(arr.func_name, obj);
+        }
+    }
+    for (auto& arr : eudarrs) {
+        bool flag = false;
+        for (auto& file : file_map[arr.file_name]) {
+            if (file.first == arr.func_name) {
+                flag = true;
+                file.second.push_back(std::ref(arr));
+            }
+        }
+        if (!flag) {
+            std::vector<std::reference_wrapper<EUDVariable>> obj;
+            obj.push_back(std::ref(arr));
+            file_map[arr.file_name].emplace_back(arr.func_name, obj);
+        }
+    }
+    for (auto& arr : eudvars) {
+        bool flag = false;
+        for (auto& file : file_map[arr.file_name]) {
+            if (file.first == arr.func_name) {
+                flag = true;
+                file.second.push_back(std::ref(arr));
+            }
+        }
+        if (!flag) {
+            std::vector<std::reference_wrapper<EUDVariable>> obj;
+            obj.push_back(std::ref(arr));
+            file_map[arr.file_name].emplace_back(arr.func_name, obj);
+        }
+    }
     /*
-	 for (auto& var : eudvars) {
-         bool pushed = false;
-         for (auto& func : func_var) {
-             std::string& func_string = func.first;
-             if (func.first == var.func_name) {
-			 	 func.second.push_back(var);
-                 pushed = true;
-			 	 break;
-			 }
-		 }
-         if (!pushed) {
-            std::vector<std::reference_wrapper<EUDVariable>> eudvarvec;
-            eudvarvec.push_back(var);
-            auto eudpair = std::pair<std::string, std::vector<std::reference_wrapper<EUDVariable>>>(strtable.func_str[var.func_index], eudvarvec);
-            func_var.push_back(eudpair);
-		 }
-	 }
-     */
+    for (auto& arr : eudgarrs) { func_map[std::string("")].push_back(arr); }
+    for (auto& arr : eudgvars) { func_map[std::string("")].push_back(arr); }
+    for (auto& arr : eudarrs) { func_map[arr.func_name].push_back(arr); }
+    for (auto& arr : eudvars) { func_map[arr.func_name].push_back(arr); }
+    for (auto& arr : func_map) {
+        file_map[arr.second[0].file_name].push_back(arr);
+    }
+    */
+
+    for (auto& file : file_map) {
+        std::cout << std::hex << "file name: " << file.first << "\n";
+        for (auto& obj : file.second) {
+            if (obj.first == "")
+                std::cout << "- function: GLOBAL" << obj.first << "\n";
+            else
+                std::cout << "- function: " << obj.first << "\n";
+            for (auto& var : obj.second) {
+                std::cout << "  - var : " << var.get( ).var_name << " / 0x" << var.get( ) .address << "\n";
+            }
+        }
+    }
 }
 
 Variables init_variables() {
@@ -143,8 +216,8 @@ Variables init_variables() {
 	const uint32_t mrgn_addr = getMRGNDataAddr( );
     section_name = strread(mrgn_addr, 4);
     std::cout << "section: " << section_name << std::endl;
-    if (section_name != "MRND") {
-        throw "cannot find MRND";
+    if (section_name != "MRNT") {
+        throw "cannot find MRNT";
     }
     section_size = dwread(mrgn_addr + 4);
     std::string mrgn_data = strread(mrgn_addr + 8, section_size);
@@ -161,9 +234,28 @@ void Variables::update_value() {
     screenTL[0] = dwread(screen_addr);
     screenTL[1] = dwread(screen_addr + 4);
 
-	// update eudvariable
-	for (auto& var : eudvars) {
-		uint32_t addr = var.address;
-		var.value = dwread(addr);
-	}
+    for (auto& arr : eudgarrs) {
+        uint32_t addr = arr.address;
+        uint32_t temp = arr.value;
+        arr.value = dwread(addr);
+        if (temp != arr.value) { arr.prev_value = temp; }
+    }
+    for (auto& arr : eudgvars) {
+        uint32_t addr = arr.address;
+        uint32_t temp = arr.value;
+        arr.value = dwread(addr);
+        if (temp != arr.value) { arr.prev_value = temp; }
+    }
+    for (auto& arr : eudarrs) {
+        uint32_t addr = arr.address;
+        uint32_t temp = arr.value;
+        arr.value = dwread(addr);
+        if (temp != arr.value) { arr.prev_value = temp; }
+    }
+    for (auto& arr : eudvars) {
+        uint32_t addr = arr.address;
+        uint32_t temp = arr.value;
+        arr.value = dwread(addr);
+        if (temp != arr.value) { arr.prev_value = temp; }
+    }
 }

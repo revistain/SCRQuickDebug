@@ -127,7 +127,7 @@ uint32_t dwread(uint32_t address) {
         return value;
     }
     else {
-        std::cout << "Error: Failed to read 4bytes from memory.\n";
+        std::cout << "Error: Failed to read 0x" << std::hex << address <<" 4bytes from memory.\n";
         return 0;
     }
 }
@@ -210,18 +210,6 @@ uint32_t find_signature_address() {
     return getFoundAddr( );
 }
 
-/*
-uint32_t signature_address;
-uint32_t base_address;
-uint32_t packet_address;
-uint32_t string_address;
-uint32_t var_adress;
-uint32_t gvar_adress;
-uint32_t arr_adress;
-uint32_t garr_adress;
-uint32_t mrgn_address;
-uint32_t screen_data_address;
-*/
 void init_signature() {
     try {
         signature_address = find_signature_address();
@@ -234,7 +222,7 @@ void init_signature() {
             gvar_adress = base_address + dwread(signature_address + 56);
             arr_adress = base_address + dwread(signature_address + 60);
             garr_adress = base_address + dwread(signature_address + 64);
-            mrgn_address = base_address + unEPD(dwread(signature_address + 68));
+            mrgn_address = base_address + dwread(signature_address + 68);
             screen_data_address = base_address + unEPD(dwread(signature_address + 72));
         }
         else { std::cerr << "cannot find signature address\n"; }
