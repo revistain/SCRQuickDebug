@@ -1,66 +1,200 @@
 from eudplib import *
 import eudplib.core.variable.eudv as ev
+import eudplib.core.eudfunc.eudfuncn as ef
+import eudplib.collections.eudarray as ea
+import eudplib.epscript.helper as hp
 import struct
 import inspect
+import os
+eudplib_type = 0
+def compare_versions(version1, version2):
+    print(version1)
+    print(version2)
+    v1_parts = list(map(int, version1.split('.')[:2]))
+    v2_parts = list(map(int, version2.split('.')[:2]))
+    return v1_parts > v2_parts
 
-# https://github.com/armoha/eudplib/commit/d44a65048d195592b29bd059e793488f53c25d28
+if compare_versions(eudplibVersion(), "0.77.9"):
+    eudplib_type = 1
+        
+
 
 isEUDFunc = False
 collected_vars = []
-original_init = ev.EUDVariable.__init__
+collected_arrays = []
+collected_gvars = []
+collected_garray = []
 frames = {}
+global_frames = {}
+frames_array = {}
+global_frames_array = {}
+original_init = ev.EUDVariable.__init__
 def _patched_init(self, *args, **kwargs):
-    prev_frame = inspect.currentframe().f_back
-    if isEUDFunc == True or prev_frame.f_back.f_code.co_name in ("onPluginStart", "beforeTriggerExec", "afterTriggerExec"):
-        fname = prev_frame.f_code.co_name
-        if fname and (fname == "_LVAR" or not fname.startswith("_")):
-            collected_vars.append(self)
-        frames[self] = prev_frame
-    original_init(self, *args, **kwargs)
+    if eudplib_type == 0:
+        prev_frame = inspect.currentframe().f_back
+        if isEUDFunc == True or prev_frame.f_back.f_code.co_name in ("onPluginStart", "beforeTriggerExec", "afterTriggerExec"):
+            fname = prev_frame.f_code.co_name
+            if fname and (fname == "_LVAR" or not fname.startswith("_")):
+                collected_vars.append(self)
+            frames[self] = prev_frame
+        original_init(self, *args, **kwargs)
+    elif eudplib_type == 1:
+        prev_frame = inspect.currentframe().f_back.f_back
+        if isEUDFunc == True:
+            fname = prev_frame.f_code.co_name
+            if fname:
+                if fname == "EUDCreateVariables":
+                    if(prev_frame.f_back.f_back.f_back.f_code.co_name == "_footer"):
+                        collected_vars.append(self)
+                        frames[self] = prev_frame.f_back.f_back.f_back.f_back.f_back
+                    else:
+                        collected_vars.append(self)
+                        frames[self] = prev_frame.f_back.f_back.f_back
+                else:
+                    collected_vars.append(self)
+                    frames[self] = prev_frame
+        original_init(self, *args, **kwargs)
+ev.EUDVariable.__init__ = _patched_init
 
-original_lshift = ev.EUDVariable.__lshift__
-def _patched_lshift(self, *args, **kwargs):
-    prev_frame = inspect.currentframe().f_back
-    if isEUDFunc == True:
-        fname = prev_frame.f_code.co_name
-        if fname:
-            print("lshift: ", fname)
-            collected_vars.append(self)
-        frames[self] = prev_frame
-    original_lshift(self, *args, **kwargs)
+original_tygv = hp._TYGV # typed global variable
+def _patched_tygv(self, *args, **kwargs):
+    if eudplib_type == 0:
+        return original_tygv(self, *args, **kwargs)
+    elif eudplib_type == 1:
+        var_list = original_tygv(self, *args, **kwargs)
+        if isinstance(var_list, list):
+            for var in var_list:
+                collected_gvars.append(var)
+                prev_frame = inspect.currentframe().f_back
+                global_frames[var] = prev_frame
+        else:
+            collected_gvars.append(var_list)
+            global_frames[var_list] = inspect.currentframe().f_back
+        return var_list
+hp._TYGV = _patched_tygv
+
+original_cgfw = hp._CGFW # const global forward?
+def _patched_cgfw(self, *args, **kwargs):
+    if eudplib_type == 0:
+        ... # for now, no
+    elif eudplib_type == 1:
+        rets = original_cgfw(self, *args, **kwargs)
+        prev_frame = inspect.currentframe().f_back
+        collected_garray.append(rets[0])
+        global_frames_array[rets[0]] = prev_frame
+    return rets
+hp._CGFW = _patched_cgfw
+    
+original_array_init = ea.EUDArray.__init__
+def _patched_array_init(self, *args, **kwargs):
+    if eudplib_type == 0:
+        ... # nope
+    elif eudplib_type == 1:
+        prev_frame = inspect.currentframe().f_back
+        collected_arrays.append(self)
+        frames_array[self] = prev_frame
+    original_array_init(self, *args, **kwargs)
+ea.EUDArray.__init__    = _patched_array_init
 
 vars = []
 ignore_set = ("EPD", "EUDLoopRange", "_create_func_args", "_create_func_body",
-            "caller", "RestorePUPx", "f", "EUDTernary", "EUDLoopPlayer", "rot")
-def find_var_names(var):
-    try:
-        for name, value in frames[var].f_locals.items():
-            if value is var:
-                if any(s[0] is name for s in vars):
-                    continue
-                if frames[var].f_code.co_name in ignore_set:
-                    continue
-                elif frames[var].f_code.co_name == "_LVAR": 
-                    frames[var] = frames[var].f_back
-                    for n, v in frames[var].f_locals.items():
-                        if v is var:
-                            name = n
-                vars.append([var, name, frames[var].f_code.co_name])
-    except KeyError:
-        ...
+            "caller", "RestorePUPx", "EUDTernary", "EUDLoopPlayer", "rot")
 
-import eudplib.core.eudfunc.eudfuncn as ef
+def find_var_names(var):
+    if eudplib_type == 0:
+        ... # nope
+    elif eudplib_type == 1:
+        try:
+            for name, value in frames[var].f_locals.items():
+                if inspect.getfile(frames[var]).endswith(".py"):
+                    continue
+                if unProxy(value) is unProxy(var):  # 내용 비교
+                    file_path = inspect.getfile(frames[var])
+                    file_name = os.path.basename(file_path)
+                    # var_data(path, func_str_idx, var_str_idx, addr)
+                    print("var: ", name)
+                    vars.append([file_name, frames[var].f_code.co_name, name, var])
+        except KeyError:
+            ...
+
+gvars = []
+def find_global_var_names(gvar):
+    if eudplib_type == 0:
+        ... # nope
+    elif eudplib_type == 1:
+        try:
+            for name, value in global_frames[gvar].f_locals.items():
+                if unProxy(value) is unProxy(gvar):  # 내용 비교
+                    file_path = inspect.getfile(global_frames[gvar])
+                    file_name = os.path.basename(file_path)
+                    # var_data(path, var_str_idx, addr)
+                    print("gvar: ", name)
+                    gvars.append([file_name, name, gvar])
+        except KeyError:
+            ...
+            
+arrays = []
+def find_array_names(arr):
+    if eudplib_type == 0:
+        ... # not support
+    elif eudplib_type == 1:
+        try:
+            for name, value in frames_array[arr].f_locals.items():
+                if inspect.getfile(frames_array[arr]).endswith(".py"):
+                    continue
+                if value is arr:  # 내용 비교
+                    file_path = inspect.getfile(frames_array[arr])
+                    file_name = os.path.basename(file_path)
+                    # var_data(path, func_str_idx, var_str_idx, addr, size)
+                    print("arr: ", name)
+                    arrays.append([file_name, frames_array[arr].f_code.co_name, name, arr, arr.length])
+        except KeyError:
+            ...
+            
+garrays = []
+def find_cgfw_names(garr):
+    if eudplib_type == 0:
+        ... # not support
+    elif eudplib_type == 1:
+        try:
+            for name, value in global_frames_array[garr].f_locals.items():
+                if inspect.getfile(global_frames_array[garr]).endswith(".py"):
+                    continue
+                if value is garr:  # 내용 비교
+                    file_path = inspect.getfile(global_frames_array[garr])
+                    file_name = os.path.basename(file_path)
+                    # var_data(path, type_str, var_str_idx, addr, size)
+                    type_name = type(garr).__name__
+                    if type_name == "EUDVArray" or type_name == "PVariable":
+                        continue
+                        garrays.append([file_name, type_name, name, garr, garr._size])
+                    elif type_name == "StringBuffer":
+                        continue
+                        garrays.append([file_name, type_name, name, garr, garr.capacity])
+                    elif type_name == "EUDObject":
+                        continue
+                        garrays.append([file_name, type_name, name, garr, garr.GetDataSize()])
+                    elif type_name == "ConstExpr": # EPD has smashed the object, so cannot know the lengthh
+                        continue
+                        garrays.append([file_name, type_name, name, garr, 0])
+        except KeyError:
+            ...
+
 oldfbody = ef.EUDFuncN._create_func_body
 def registerEUDFunc(self, *args, **kwargs):
     global isEUDFunc
-    isEUDFunc = True
-    oldfbody(self, *args, **kwargs)
-    isEUDFunc = False
+    if eudplib_type == 0:
+        isEUDFunc = True
+        oldfbody(self, *args, **kwargs)
+        isEUDFunc = False
+    elif eudplib_type == 1:
+        isEUDFunc = True
+        oldfbody(self, *args, **kwargs)
+        isEUDFunc = False
 ef.EUDFuncN._create_func_body = registerEUDFunc
 
 bufferEPD = EPD(Db(1008))
-signatureEPD = EPD(Db("TEMPjknOSDIfnwlnlSNDKlnfkopqfnkLDNSFEDAC\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0")) # 40bytes
-
+signatureEPD = EPD(Db("TEMPjknOSDIfnwlnlSNDKlnfkopqfnkLDNSFEDAC\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1")) # 40bytes
 # sendCount = EUDVariable(0, Add, 1)
 # sendCount.SetDest(sendCount.getDestAddr())
 # currentHeadEPD = EUDXVariable(EPD(0x6509B0), Add, 0, 200)
@@ -108,50 +242,135 @@ signatureEPD = EPD(Db("TEMPjknOSDIfnwlnlSNDKlnfkopqfnkLDNSFEDAC\0\0\0\0\0\0\0\0\
 #     ])
 
 ##### custom defined sections
-### func string
-##  4b      : FUNS
+##  string
+##  4b      : STRS
 ##  4b      : size of strings
 ##  strs    : func strings
-
-### var string
-##  4b      : VARS
-##  4b      : size of strings
-##  strs    : variable strings
 
 ### variable table
 ##  4b      : VART
 ##  4b      : size of variable
-##  12b*vars: var_data(func_str_idx, var_str_idx, data)
+### 16b*vars: var_data(path, func_str_idx, var_str_idx, addr)
 
-### location string
-##  4b      : MRNS
-##  4b      : size of strings
-##  strs    : loc strings
+### global variable table
+##  4b      : GVRT
+##  4b      : size of variable
+### 12b*vars: var_data(path, var_str_idx, addr)
+
+### array table
+##  4b      : ARRT
+##  4b      : size of array
+### 20b*vars: var_data(path, func_str_idx, var_str_idx, addr, size)
+
+### cgfw table
+##  4b      : GART
+##  4b      : size of array
+### 16b*vars: garr_data(path, type_str, var_str_idx, addr, size)
 
 ### location table
 ##  4b      : MRND
 ##  4b      : size of locations
-##  8b*locs : loc_data(loc name, loc str idex)
+##  8b*locs : loc_data(loc name, loc number)
 #####
 
-func_str    = []
-var_str     = []
-var_data    = []
-funcStrDb      = Forward()
-funcVarDb      = Forward()
-funcVarDataDb  = Forward()
-funcMRGNDb     = Forward()
-funcMRGNDataDb = Forward()
+strs           = []
+var_data       = []
+gvar_data      = []
+arr_data       = []
+garr_data      = []
+mrgn_data      = []
+stringDb   = Forward()
+varDataDb  = Forward()
+gvarDataDb = Forward()
+arrDataDb  = Forward()
+garrDataDb = Forward()
+MRGNDataDb = Forward()
 def process_vars():
+    # var_data(path, func_str_idx, var_str_idx, addr)
     for e in vars:
-        func_idx = 0
-        if e[2] not in func_str:
-            func_str.append(e[2])
-            func_idx = len(func_str) - 1
+        path_idx = 0
+        if e[0] not in strs:
+            strs.append(e[0])
+            path_idx = len(strs) - 1
         else:
-            func_idx = func_str.index(e[2])
-        var_str.append(e[1])
-        var_data.append([func_idx, len(var_str)-1, e[0]])
+            path_idx = strs.index(e[0])
+
+        func_idx = 0
+        if e[1] not in strs:
+            strs.append(e[1])
+            func_idx = len(strs) - 1
+        else:
+            func_idx = strs.index(e[1])
+        strs.append(e[2])
+        var_data.append([path_idx, func_idx, len(strs)-1, e[3]])
+        
+def process_gvars():
+    # gvar_data(path, var_str_idx, addr)
+    for e in gvars:
+        path_idx = 0
+        if e[0] not in strs:
+            strs.append(e[0])
+            path_idx = len(strs) - 1
+        else:
+            path_idx = strs.index(e[0])
+            
+        strs.append(e[1])
+        gvar_data.append([path_idx, len(strs)-1, e[2]])
+        
+def process_arrs():
+    # arr_data(path, func_str_idx, var_str_idx, addr, size)
+    for e in arrays:
+        path_idx = 0
+        if e[0] not in strs:
+            strs.append(e[0])
+            path_idx = len(strs) - 1
+        else:
+            path_idx = strs.index(e[0])
+            
+        func_idx = 0
+        if e[1] not in strs:
+            strs.append(e[1])
+            func_idx = len(strs) - 1
+        else:
+            func_idx = strs.index(e[1])
+        strs.append(e[2])
+        arr_data.append([path_idx, func_idx, len(strs)-1, e[3], e[4]])
+        
+def process_garrs():
+    # garr_data(path, type_str, var_str_idx, addr, size)
+    for e in garrays:
+        path_idx = 0
+        if e[0] not in strs:
+            strs.append(e[0])
+            path_idx = len(strs) - 1
+        else:
+            path_idx = strs.index(e[0])
+            
+        type_idx = 0
+        if e[1] not in strs:
+            strs.append(e[1])
+            type_idx = len(strs) - 1
+        else:
+            type_idx = strs.index(e[1])
+            
+        strs.append(e[2])
+        print("CGFW: ", [path_idx, type_idx, len(strs)-1, e[3], e[4]])
+        garr_data.append([path_idx, type_idx, len(strs)-1, e[3], e[4]])
+
+import eudplib.core.mapdata.stringmap as sm
+def process_mrgn():
+    # print()
+    locmap = sm.locmap._s2id # {locname: locidx}
+    mrgn_idx = 0
+    for k, v in locmap.items():
+        ks = k.decode('utf-8')
+        if ks not in strs:
+            strs.append(ks)
+            mrgn_idx = len(strs) - 1
+        else:
+            mrgn_idx = strs.index(ks)
+        mrgn_data.append([mrgn_idx, v])
+    return mrgn_data
 
 screenDbEPD = EPD(Db(8)) # screen top, left(0 ~ 0x1FFF) 4byte each
 mapPathDbEPD = EPD(Db(260))
@@ -163,58 +382,100 @@ def modify_map_name():
         
 def save_data():
     process_vars()
-    modify_map_name()
+    process_gvars()
+    process_arrs()
+    process_garrs()
+    process_mrgn()
+    for i, e in enumerate(strs):
+        print(i, e)
 
     # restore header
     act = []
     header = struct.unpack("<I", b"Gong")[0]
     act.append(SetMemoryEPD(signatureEPD, SetTo, header))
-    # func string table
-    _funcFuncBinaray = b''
-    for str in func_str:
-        _funcFuncBinaray += str.encode('utf-8')+ b'\x00'
-    funcFuncBinary = b'FUNS' + struct.pack("<I", len(_funcFuncBinaray))
-    funcFuncBinary += _funcFuncBinaray
-    funcStrDb << Db(funcFuncBinary)
+    # string table
+    _stringBinaray = b''
+    for str in strs:
+        _stringBinaray += str.encode('utf-8')+ b'\x00'
+    stringBinary = b'STRS' + struct.pack("<I", len(_stringBinaray))
+    stringBinary += _stringBinaray
+    stringDb << Db(stringBinary)
 
-    # var string table
-    _funcVarBinaray = b''
-    for str in var_str:
-        _funcVarBinaray += str.encode('utf-8')+ b'\x00'
-    funcVarBinary = b'VARS' + struct.pack("<I", len(_funcVarBinaray))
-    funcVarBinary += _funcVarBinaray
-    funcVarDb << Db(funcVarBinary)
-
+    #####
+    ### variable table
+    ##  4b      : VART
+    ##  4b      : size of variable
+    ### 16b*vars: var_data(path, func_str_idx, var_str_idx, addr)
     # var data table
     _funcVarDataBinaray = b''
     for i, var in enumerate(var_data):
         _funcVarDataBinaray += struct.pack("<I", var[0])
         _funcVarDataBinaray += struct.pack("<I", var[1])
-        _funcVarDataBinaray += b'\0\0\0\0' # struct.pack("<I", var[2].getValueAddr())
-        act.append(SetMemoryEPD(EPD(funcVarDataDb)+4+3*i, SetTo, var[2].getValueAddr()))
-    funcVarDataBinary = b'VARD' + struct.pack("<I", len(_funcVarDataBinaray))
+        _funcVarDataBinaray += struct.pack("<I", var[2])
+        _funcVarDataBinaray += b'\0\0\0\0'
+        act.append(SetMemoryEPD(EPD(varDataDb)+2+3+4*i, SetTo, var[3].getValueAddr()))
+    funcVarDataBinary = b'VART' + struct.pack("<I", len(_funcVarDataBinaray))
     funcVarDataBinary += _funcVarDataBinaray
-    funcVarDataDb << Db(funcVarDataBinary)
+    varDataDb << Db(funcVarDataBinary)
 
-    # mrgn string table
-    mrgn = getMRGNArray()
-    _funcMRGNBinaray = b''
-    for i, str in enumerate(mrgn):
-        print(str[0])
-        _funcMRGNBinaray += str[0] + b'\x00'
-        str[0] = i
-    funcMRGNBinary = b'MRNS' + struct.pack("<I", len(_funcMRGNBinaray))
-    funcMRGNBinary += _funcMRGNBinaray
-    funcMRGNDb << Db(funcMRGNBinary)
+    ### global variable table
+    ##  4b      : GVRT
+    ##  4b      : size of variable
+    ### 12b*vars: gvar_data(path, var_str_idx, addr)
+    _funcGVarDataBinaray = b''
+    for i, var in enumerate(gvar_data):
+        _funcGVarDataBinaray += struct.pack("<I", var[0])
+        _funcGVarDataBinaray += struct.pack("<I", var[1])
+        _funcGVarDataBinaray += b'\0\0\0\0'
+        act.append(SetMemoryEPD(EPD(gvarDataDb)+2+2+3*i, SetTo, var[2].getValueAddr()))
+    funcGVarDataBinary = b'GVRT' + struct.pack("<I", len(_funcGVarDataBinaray))
+    funcGVarDataBinary += _funcGVarDataBinaray
+    gvarDataDb << Db(funcGVarDataBinary)
 
+    ### array table
+    ##  4b      : ARRT
+    ##  4b      : size of array
+    ### 20b*vars: arr_data(path, func_str_idx, var_str_idx, addr, size)
+    _funcArrDataBinaray = b''
+    for i, var in enumerate(arr_data):
+        _funcArrDataBinaray += struct.pack("<I", var[0])
+        _funcArrDataBinaray += struct.pack("<I", var[1])
+        _funcArrDataBinaray += struct.pack("<I", var[2])
+        _funcArrDataBinaray += b'\0\0\0\0'
+        _funcArrDataBinaray += struct.pack("<I", var[4])
+        act.append(SetMemoryEPD(EPD(arrDataDb)+2+3+5*i, SetTo, var[3].Evaluate()))
+    funcArrDataBinaray = b'ARRT' + struct.pack("<I", len(_funcArrDataBinaray))
+    funcArrDataBinaray += _funcArrDataBinaray
+    arrDataDb << Db(funcArrDataBinaray)
+
+    ### global array table
+    ##  4b      : GART
+    ##  4b      : size of array
+    ### 16b*vars: garr_data(path, type_str, var_str_idx, addr, size)
+    _funcGArrDataBinaray = b''
+    for i, var in enumerate(garr_data):
+        _funcGArrDataBinaray += struct.pack("<I", var[0])
+        _funcGArrDataBinaray += struct.pack("<I", var[1])
+        _funcGArrDataBinaray += struct.pack("<I", var[2])
+        _funcGArrDataBinaray += b'\0\0\0\0'
+        _funcGArrDataBinaray += struct.pack("<I", var[4])
+        act.append(SetMemoryEPD(EPD(garrDataDb)+2+3+5*i, SetTo, var[3]))
+    funcGArrDataBinaray = b'GART' + struct.pack("<I", len(_funcGArrDataBinaray))
+    funcGArrDataBinaray += _funcGArrDataBinaray
+    garrDataDb << Db(funcGArrDataBinaray)
+
+    ### location table
+    ##  4b      : MRNT
+    ##  4b      : size of locations
+    ##  8b*locs : loc_data(loc name, loc str index)
     # mrgn string mapping table
     _funcMRGNDataBinaray = b''
-    for i, str in enumerate(mrgn):
+    for i, str in enumerate(mrgn_data):
         _funcMRGNDataBinaray += struct.pack("<I", str[0])
         _funcMRGNDataBinaray += struct.pack("<I", str[1])
-    funcMRGNDataBinary = b'MRND' + struct.pack("<I", len(_funcMRGNDataBinaray))
+    funcMRGNDataBinary = b'MRNT' + struct.pack("<I", len(_funcMRGNDataBinaray))
     funcMRGNDataBinary += _funcMRGNDataBinaray
-    funcMRGNDataDb << Db(funcMRGNDataBinary)
+    MRGNDataDb << Db(funcMRGNDataBinary)
     
     # save screen data
     f_repmovsd_epd(screenDbEPD, EPD(0x628470), 1)
@@ -222,6 +483,7 @@ def save_data():
     if EUDExecuteOnce()():
         # save map path data
         # f_repmovsd_epd(mapPathDbEPD, EPD(0x57FD3C), 65)
+        modify_map_name()
         DoActions(act)
     EUDEndExecuteOnce()
 
@@ -231,26 +493,17 @@ def dwread(ba, offset):
 def bread(ba, offset):
     return ba[offset]
 
-import eudplib.core.mapdata.stringmap as sm
-def getMRGNArray():
-    print()
-    locmap = sm.locmap._s2id # {locname: locidx}
-    mrgn_data = []
-    for k, v in locmap.items():
-        mrgn_data.append([k, v])
-    return mrgn_data
-
 def init_signature():
     DoActions([
         SetMemoryEPD(signatureEPD+10, SetTo, signatureEPD),
         SetMemoryEPD(signatureEPD+11, SetTo, bufferEPD),
-        SetMemoryEPD(signatureEPD+12, SetTo, funcStrDb),
-        SetMemoryEPD(signatureEPD+13, SetTo, funcVarDb),
-        SetMemoryEPD(signatureEPD+14, SetTo, funcVarDataDb),
-        SetMemoryEPD(signatureEPD+15, SetTo, funcMRGNDb),
-        SetMemoryEPD(signatureEPD+16, SetTo, funcMRGNDataDb),
-        SetMemoryEPD(signatureEPD+17, SetTo, screenDbEPD),
-        SetMemoryEPD(signatureEPD+18, SetTo, mapPathDbEPD), # unused
+        SetMemoryEPD(signatureEPD+12, SetTo, stringDb),
+        SetMemoryEPD(signatureEPD+13, SetTo, varDataDb),
+        SetMemoryEPD(signatureEPD+14, SetTo, gvarDataDb),
+        SetMemoryEPD(signatureEPD+15, SetTo, arrDataDb),
+        SetMemoryEPD(signatureEPD+16, SetTo, garrDataDb),
+        SetMemoryEPD(signatureEPD+17, SetTo, MRGNDataDb),
+        SetMemoryEPD(signatureEPD+18, SetTo, screenDbEPD),
     ])
 
 ## packet
@@ -342,9 +595,11 @@ def modifiyMapName():
     chkt.setsection("SPRP", SPRP)
 
 def onPluginStart():
+    if compare_versions(eudplibVersion(), "0.77.9"):
+        eudplib_type = 1
+        
     init_signature()
-    ev.EUDVariable.__init__ = _patched_init
-    ev.EUDVariable.__lshift__ = _patched_lshift
+    # ev.EUDVariable.__lshift__ = _patched_lshift
     sendPacket(0xAB, 0x00FF00FF, 0xAAAABBBB, 0xBBBBCCCC)
 
 def beforeTriggerExec():
@@ -354,8 +609,12 @@ def beforeTriggerExec():
 def afterTriggerExec():
     for var in collected_vars:
         find_var_names(var)
-    for var in vars:
-        print(var)
+    for arr in collected_arrays:
+        find_array_names(arr)
+    for gvar in collected_gvars:
+        find_global_var_names(gvar)
+    for garr in collected_garray:
+        find_cgfw_names(garr)
     save_data()
     
     # print screen
