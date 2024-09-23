@@ -11,13 +11,13 @@ static HANDLE hProcess;  // Global handle to the process
 uint32_t signature_address;
 uint32_t base_address;
 uint32_t packet_address;
-uint32_t func_table_address;
-uint32_t var_table_address;
-uint32_t var_data_address;
-uint32_t mrgn_table_address;
-uint32_t mrgn_data_address;
+uint32_t string_address;
+uint32_t var_adress;
+uint32_t gvar_adress;
+uint32_t arr_adress;
+uint32_t garr_adress;
+uint32_t mrgn_address;
 uint32_t screen_data_address;
-uint32_t map_path_address;
 
 uint32_t exeAddr = 0;
 uint32_t unittableAddr = 0;
@@ -30,14 +30,14 @@ uint32_t getUnittableAddr( ) { return unittableAddr; }
 void setUnittableAddr(uint32_t paddr) { unittableAddr = dwread(paddr + 0xBCE98) + 0x60000; }
 uint32_t getSignatureAddr() { return signature_address; }
 uint32_t getBaseAddr() { return base_address; }
-uint32_t getPacketAddr() { return packet_address; }
-uint32_t getFuncTableAddr() { return func_table_address; }
-uint32_t getVarTableAddr() { return var_table_address; }
-uint32_t getVarDataAddr() { return var_data_address; }
-uint32_t getMRGNTableAddr() { return mrgn_table_address; }
-uint32_t getMRGNDataAddr() { return mrgn_data_address; }
+uint32_t getPacketAddr( ) { return packet_address; }
+uint32_t getStringAddr( ) { return string_address; }
+uint32_t getVarAddr( ) { return var_adress; }
+uint32_t getGVarAddr( ) { return gvar_adress; }
+uint32_t getArrAddr( ) { return arr_adress; }
+uint32_t getGArrAddr( ) { return garr_adress; }
+uint32_t getMRGNDataAddr() { return mrgn_address; }
 uint32_t getScreenDataAddr() { return screen_data_address; }
-uint32_t getMapPathAddr() { return map_path_address; }
 
 std::vector<uint8_t> StringToByteVector(std::string& str) {
     std::vector<uint8_t> ret = std::vector<uint8_t>(str.begin( ), str.end( ));
@@ -210,7 +210,18 @@ uint32_t find_signature_address() {
     return getFoundAddr( );
 }
 
-
+/*
+uint32_t signature_address;
+uint32_t base_address;
+uint32_t packet_address;
+uint32_t string_address;
+uint32_t var_adress;
+uint32_t gvar_adress;
+uint32_t arr_adress;
+uint32_t garr_adress;
+uint32_t mrgn_address;
+uint32_t screen_data_address;
+*/
 void init_signature() {
     try {
         signature_address = find_signature_address();
@@ -218,13 +229,13 @@ void init_signature() {
         if (signature_address != 0) {
             base_address = signature_address - unEPD(dwread(signature_address + 40));
             packet_address = base_address + unEPD(dwread(signature_address + 44));
-            func_table_address = base_address + dwread(signature_address + 48);
-            var_table_address = base_address + dwread(signature_address + 52);
-            var_data_address = base_address + dwread(signature_address + 56);
-            mrgn_table_address = base_address + dwread(signature_address + 60);
-            mrgn_data_address = base_address + dwread(signature_address + 64);
-            screen_data_address = base_address + unEPD(dwread(signature_address + 68));
-            map_path_address = base_address + unEPD(dwread(signature_address + 72));
+            string_address = base_address + dwread(signature_address + 48);
+            var_adress = base_address + dwread(signature_address + 52);
+            gvar_adress = base_address + dwread(signature_address + 56);
+            arr_adress = base_address + dwread(signature_address + 60);
+            garr_adress = base_address + dwread(signature_address + 64);
+            mrgn_address = base_address + unEPD(dwread(signature_address + 68));
+            screen_data_address = base_address + unEPD(dwread(signature_address + 72));
         }
         else { std::cerr << "cannot find signature address\n"; }
     }
