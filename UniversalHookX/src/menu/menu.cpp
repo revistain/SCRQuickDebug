@@ -5,6 +5,7 @@
 
 #include "../imgui_scr.h"
 #include "../drawing.h"
+#include "../font.h"
 namespace ig = ImGui;
 
 namespace Menu {
@@ -13,8 +14,8 @@ namespace Menu {
             return;
 
         ImGui::CreateContext( );
+        initFonts( );
         ImGui_ImplWin32_Init(hwnd);
-        // initFonts( );
 
         ImGuiIO& io = ImGui::GetIO( );
         io.IniFilename = io.LogFilename = nullptr;

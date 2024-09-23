@@ -184,6 +184,7 @@
     <ClCompile Include="src\debugger\signature.cpp" />
     <ClCompile Include="src\debugger\variable.cpp" />
     <ClCompile Include="src\drawing.cpp" />
+    <ClCompile Include="src\font.cpp" />
     <ClCompile Include="src\imgui_scr.cpp" />
     <ClCompile Include="src\console\console.cpp" />
     <ClCompile Include="src\dependencies\imgui\imgui.cpp" />
@@ -224,6 +225,7 @@
     <ClCompile Include="src\hooks\backend\opengl\hook_opengl.cpp" />
     <ClCompile Include="src\hooks\backend\vulkan\hook_vulkan.cpp" />
     <ClCompile Include="src\hooks\hooks.cpp" />
+    <ClCompile Include="src\imgui_things.cpp" />
     <ClCompile Include="src\LocationDraw.cpp" />
     <ClCompile Include="src\memoryRW.cpp" />
     <ClCompile Include="src\menu\menu.cpp" />
@@ -234,7 +236,10 @@
     <ClCompile Include="src\utils\utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="src\dllmain.h" />
     <ClInclude Include="src\drawing.h" />
+    <ClInclude Include="src\font.h" />
     <ClInclude Include="src\game_data.h" />
     <ClInclude Include="src\imgui_scr.h" />
     <ClInclude Include="src\backend.hpp" />
@@ -272,6 +277,7 @@
     <ClInclude Include="src\hooks\backend\opengl\hook_opengl.hpp" />
     <ClInclude Include="src\hooks\backend\vulkan\hook_vulkan.hpp" />
     <ClInclude Include="src\hooks\hooks.hpp" />
+    <ClInclude Include="src\imgui_things.h" />
     <ClInclude Include="src\include\debugger_main.h" />
     <ClInclude Include="src\include\encoding.h" />
     <ClInclude Include="src\include\eud.h" />
@@ -290,6 +296,9 @@
   </ItemGroup>
   <ItemGroup>
     <Font Include="bin\Kostar.ttf" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="UniversalHookX.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -3,11 +3,13 @@ import eudplib.core.variable.eudv as ev
 import struct
 import inspect
 
+# https://github.com/armoha/eudplib/commit/d44a65048d195592b29bd059e793488f53c25d28
+
 isEUDFunc = False
 collected_vars = []
 original_init = ev.EUDVariable.__init__
 frames = {}
-def patched_init(self, *args, **kwargs):
+def _patched_init(self, *args, **kwargs):
     prev_frame = inspect.currentframe().f_back
     if isEUDFunc == True or prev_frame.f_back.f_code.co_name in ("onPluginStart", "beforeTriggerExec", "afterTriggerExec"):
         fname = prev_frame.f_code.co_name
@@ -16,21 +18,34 @@ def patched_init(self, *args, **kwargs):
         frames[self] = prev_frame
     original_init(self, *args, **kwargs)
 
+original_lshift = ev.EUDVariable.__lshift__
+def _patched_lshift(self, *args, **kwargs):
+    prev_frame = inspect.currentframe().f_back
+    if isEUDFunc == True:
+        fname = prev_frame.f_code.co_name
+        if fname:
+            print("lshift: ", fname)
+            collected_vars.append(self)
+        frames[self] = prev_frame
+    original_lshift(self, *args, **kwargs)
+
 vars = []
 ignore_set = ("EPD", "EUDLoopRange", "_create_func_args", "_create_func_body",
-            "caller", "RestorePUPx", "f", "EUDTernary")
-def find_var_names(self):
+            "caller", "RestorePUPx", "f", "EUDTernary", "EUDLoopPlayer", "rot")
+def find_var_names(var):
     try:
-        for name, value in frames[self].f_locals.items():
-            if value is self:
-                if frames[self].f_code.co_name in ignore_set:
+        for name, value in frames[var].f_locals.items():
+            if value is var:
+                if any(s[0] is name for s in vars):
                     continue
-                elif frames[self].f_code.co_name == "_LVAR": 
-                    frames[self] = frames[self].f_back
-                    for n, v in frames[self].f_locals.items():
-                        if v is self:
+                if frames[var].f_code.co_name in ignore_set:
+                    continue
+                elif frames[var].f_code.co_name == "_LVAR": 
+                    frames[var] = frames[var].f_back
+                    for n, v in frames[var].f_locals.items():
+                        if v is var:
                             name = n
-                vars.append([self, name, frames[self].f_code.co_name])
+                vars.append([var, name, frames[var].f_code.co_name])
     except KeyError:
         ...
 
@@ -42,8 +57,6 @@ def registerEUDFunc(self, *args, **kwargs):
     oldfbody(self, *args, **kwargs)
     isEUDFunc = False
 ef.EUDFuncN._create_func_body = registerEUDFunc
-
-
 
 bufferEPD = EPD(Db(1008))
 signatureEPD = EPD(Db("TEMPjknOSDIfnwlnlSNDKlnfkopqfnkLDNSFEDAC\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0")) # 40bytes
@@ -148,7 +161,6 @@ def modify_map_name():
     header = struct.unpack("<I", b"Gong")[0]
     DoActions(SetMemoryEPD(EPD(0x57FD3C), SetTo, header))
         
-
 def save_data():
     process_vars()
     modify_map_name()
@@ -331,7 +343,8 @@ def modifiyMapName():
 
 def onPluginStart():
     init_signature()
-    ev.EUDVariable.__init__ = patched_init
+    ev.EUDVariable.__init__ = _patched_init
+    ev.EUDVariable.__lshift__ = _patched_lshift
     sendPacket(0xAB, 0x00FF00FF, 0xAAAABBBB, 0xBBBBCCCC)
 
 def beforeTriggerExec():

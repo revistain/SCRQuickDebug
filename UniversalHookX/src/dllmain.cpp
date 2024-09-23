@@ -9,14 +9,14 @@
 
 #include "dependencies/minhook/MinHook.h"
 #include "ratio.h"
+#include "dllmain.h"
 
 DWORD WINAPI OnProcessAttach(LPVOID lpParam);
 DWORD WINAPI OnProcessDetach(LPVOID lpParam);
 
-#include <Windows.h>
-#include <iostream>
 
 HINSTANCE g_hInstance = NULL;
+HINSTANCE getDllHandle( ) { return g_hInstance; }
 
 // 키보드 입력 감지 스레드
 DWORD WINAPI KeyPressListener(LPVOID lpParam) {
