@@ -11,11 +11,11 @@
 #include <format>
 
 
-void writeEUDVariable(std::reference_wrapper<EUDVariable>& obj, uint32_t param, uint32_t value);
-void writeEUDArray(std::reference_wrapper<EUDVariable>& obj, uint32_t param, uint32_t value);
-void writeEUDVArray(std::reference_wrapper<EUDVariable>& obj, uint32_t param, uint32_t value);
+void writeEUDVariable(EUDVariable& obj, uint32_t param, uint32_t value);
+void writeEUDArray(EUDVariable& obj, uint32_t param, uint32_t value);
+void writeEUDVArray(EUDVariable& obj, uint32_t param, uint32_t value);
 
-void inputable_form(bool isHex, uint32_t param1, std::reference_wrapper<EUDVariable>& obj, int var_idx, void (*func)(std::reference_wrapper<EUDVariable>&, uint32_t, uint32_t));
+void inputable_form(bool isHex, uint32_t param1, EUDVariable& obj, int var_idx, void (*func)(EUDVariable&, uint32_t, uint32_t));
 inline void ToggleButton(const char* str_id, bool* v) {
     ImVec4* colors = ImGui::GetStyle( ).Colors;
     ImVec2 p = ImGui::GetCursorScreenPos( );

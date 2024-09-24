@@ -4,6 +4,7 @@
 #include <string>
 #include <cstring>
 #include "signature.h"
+#include "../imgui_memory_editor.h"
 #include <unordered_map>
 
 class StringTable {
@@ -22,11 +23,18 @@ public:
     std::string var_name;
     std::string cgfw_type;
     std::vector<uint32_t> additional_value;
-    std::vector<char*> display_buf; // ^*^
+    std::string Db;
+
+    std::vector<std::string> display_buf;
     bool pinned;
+    MemoryEditor mem_edit;
+    bool watchingDb;
+
     EUDVariable(StringTable& string, uint32_t _file_index, uint32_t _func_index, uint32_t _var_index, uint32_t _addr);
     EUDVariable(StringTable& string, uint32_t _file_index, uint32_t _func_index, uint32_t _var_index, uint32_t _addr, uint32_t size);
-    ~EUDVariable( );
+    void updateDb();
+    //EUDVariable(const EUDVariable& eudvar);
+    //~EUDVariable( );
 };
 
 class Variables {
@@ -46,6 +54,8 @@ public:
         std::string& str_data, std::string& var_data, std::string& gvar_data,
         std::string& arr_data, std::string& garr_data, std::string& mrgn_data
     );
+    //~Variables( );
+     //Variables(const Variables& vars);
 
 	void update_value();
 };

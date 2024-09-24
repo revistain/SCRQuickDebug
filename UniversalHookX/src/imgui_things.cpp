@@ -1,47 +1,46 @@
 #include "imgui_things.h"
 
-void writeEUDVariable(std::reference_wrapper<EUDVariable>& obj, uint32_t param, uint32_t value) {
-    Internal::dwwrite(obj.get( ).address, value);
+void writeEUDVariable(EUDVariable& obj, uint32_t param, uint32_t value) {
+    Internal::dwwrite(obj.address, value & 0xFFFFFFFF);
 }
 
-void writeEUDArray(std::reference_wrapper<EUDVariable>& obj, uint32_t param, uint32_t value) {
-    Internal::dwwrite(obj.get( ).address + param * 4, value);
+void writeEUDArray(EUDVariable& obj, uint32_t param, uint32_t value) {
+    Internal::dwwrite(obj.address + param * 4, value & 0xFFFFFFFF);
 }
 
-void writeEUDVArray(std::reference_wrapper<EUDVariable>& obj, uint32_t param, uint32_t value) {
-    Internal::dwwrite(getBaseAddr() + obj.get( ).address + 348 + param * 72, value);
+void writeEUDVArray(EUDVariable& obj, uint32_t param, uint32_t value) {
+    Internal::dwwrite(getBaseAddr() + obj.address + 348 + param * 72, value & 0xFFFFFFFF);
 }
 
-void inputable_form(bool isHex, uint32_t param1, std::reference_wrapper<EUDVariable>& obj, int var_idx, void (*func)(std::reference_wrapper<EUDVariable>&, uint32_t, uint32_t)) {
-    if (param1 >= obj.get( ).display_buf.size( ))
-        return;
-    
+void inputable_form(bool isHex, uint32_t param1, EUDVariable& obj, int var_idx, void (*func)(EUDVariable&, uint32_t, uint32_t)) {
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.2f, 0.2f, 0.2f, 1.0f)); // Background color
     if (isHex) {
-        std::cout << "==================\n";
-        if (obj.get( ).cgfw_type == "EUDArray" || obj.get( ).cgfw_type == "EUDVArray" || obj.get( ).cgfw_type == "PVariable") {
-            snprintf(obj.get( ).display_buf[param1], 20, "0x%08X\0", obj.get( ).additional_value[param1]);
+        if (obj.cgfw_type == "EUDArray" || obj.cgfw_type == "EUDVArray" || obj.cgfw_type == "PVariable") {
+            obj.display_buf[param1] = std::format("{:08X}\0", obj.additional_value[param1]);
+        } else {
+            obj.display_buf[param1] = std::format("{:08X}\0", obj.value);
         }
-        else {
-            snprintf(obj.get( ).display_buf[param1], 20, "0x%08X\0", obj.get( ).value);
-        }
-        ImGui::SetNextItemWidth(90);
-        ImGui::InputText(std::format("##form_hex{}", var_idx).c_str( ), obj.get( ).display_buf[param1], 20, ImGuiInputTextFlags_CharsHexadecimal);
+        char dummy[3] = "0x";
+        ImGui::SetNextItemWidth(20);
+        ImGui::InputText(std::format("##hex_prefix{}", var_idx).c_str( ), dummy, 2, ImGuiInputTextFlags_ReadOnly);
+        ImGui::SameLine(0.0f, 0.0f);
+        ImGui::SetNextItemWidth(70);
+        ImGui::InputText(std::format("##form_hex{}", var_idx).c_str( ), &obj.display_buf[param1][0], 9, ImGuiInputTextFlags_CharsHexadecimal);
         if (ImGui::IsItemDeactivatedAfterEdit( )) {
-            (*func)(obj, param1, static_cast<uint32_t>(std::stoul(obj.get( ).display_buf[param1]+2, nullptr, 16)));
+            (*func)(obj, param1, static_cast<uint32_t>(std::stoul(obj.display_buf[param1], nullptr, 16)));
         }
 
-    }
-    else {
-        if (obj.get( ).cgfw_type == "EUDArray" || obj.get( ).cgfw_type == "EUDVArray" || obj.get( ).cgfw_type == "PVariable") {
-            snprintf(obj.get( ).display_buf[param1], 20, "%d\0", obj.get( ).additional_value[param1]);
+    } else {
+        if (obj.cgfw_type == "EUDArray" || obj.cgfw_type == "EUDVArray" || obj.cgfw_type == "PVariable") {
+            obj.display_buf[param1] = std::format("{}\0", obj.additional_value[param1]);
+        } else {
+            obj.display_buf[param1] = std::format("{}\0", obj.value);
         }
-        else {
-            snprintf(obj.get( ).display_buf[param1], 20, "%d\0", obj.get( ).value);
-        }
-        ImGui::SetNextItemWidth(90);
-        ImGui::InputText(std::format("##form_dec{}", var_idx).c_str( ), obj.get( ).display_buf[param1], 20, ImGuiInputTextFlags_CharsDecimal);
+        ImGui::SetNextItemWidth(100);
+        ImGui::InputText(std::format("##form_dec{}", var_idx).c_str( ), &obj.display_buf[param1][0], 15, ImGuiInputTextFlags_CharsDecimal);
         if (ImGui::IsItemDeactivatedAfterEdit( )) {
-            (*func)(obj, param1, static_cast<uint32_t>(std::stoul(obj.get( ).display_buf[param1], nullptr, 10)));
+            (*func)(obj, param1, static_cast<uint32_t>(std::stoul(obj.display_buf[param1], nullptr, 10)));
         }
     }
+    ImGui::PopStyleColor(1);
 }

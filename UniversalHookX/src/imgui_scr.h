@@ -12,6 +12,5 @@
 #include "game_data.h"
 #include "LocationDraw.h"
 
-void StarCraft_UI();
-void Debug_UI();
+void StarCraft_UI( );
 #endif

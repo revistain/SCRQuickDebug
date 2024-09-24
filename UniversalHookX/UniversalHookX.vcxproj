@@ -241,6 +241,7 @@
     <ClInclude Include="src\drawing.h" />
     <ClInclude Include="src\font.h" />
     <ClInclude Include="src\game_data.h" />
+    <ClInclude Include="src\imgui_memory_editor.h" />
     <ClInclude Include="src\imgui_scr.h" />
     <ClInclude Include="src\backend.hpp" />
     <ClInclude Include="src\console\console.hpp" />

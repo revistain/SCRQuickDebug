@@ -10,6 +10,7 @@
 #include "dependencies/minhook/MinHook.h"
 #include "ratio.h"
 #include "dllmain.h"
+#include "imgui_scr.h"
 
 DWORD WINAPI OnProcessAttach(LPVOID lpParam);
 DWORD WINAPI OnProcessDetach(LPVOID lpParam);
@@ -18,35 +19,29 @@ DWORD WINAPI OnProcessDetach(LPVOID lpParam);
 HINSTANCE g_hInstance = NULL;
 HINSTANCE getDllHandle( ) { return g_hInstance; }
 
-// 키보드 입력 감지 스레드
 DWORD WINAPI KeyPressListener(LPVOID lpParam) {
     while (true) {
-        // '-' 키를 감지 (VK_OEM_MINUS는 '-'의 가상 키 코드)
         if (GetAsyncKeyState(VK_OEM_MINUS) & 0x8000) {
             std::cout << "'-' 키가 눌렸습니다. DLL을 분리합니다.\n";
             FreeLibraryAndExitThread(static_cast<HMODULE>(lpParam), 0);
         }
 
-        // 너무 자주 체크하지 않도록 약간의 딜레이를 줍니다
         Sleep(100);
     }
     return 0;
 }
 
-// DLL 메인 함수
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
     if (fdwReason == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(hinstDLL);
         g_hInstance = hinstDLL;
 
-        // 렌더링 백엔드 설정 (예시)
         U::SetRenderingBackend(DIRECTX11);
 
         HANDLE hHandle = CreateThread(NULL, 0, OnProcessAttach, hinstDLL, 0, NULL);
         if (hHandle != NULL) {
             CloseHandle(hHandle);
         }
-        // 키 입력 감지 스레드 생성
         HANDLE hKeyHandle = CreateThread(NULL, 0, KeyPressListener, hinstDLL, 0, NULL);
         if (hKeyHandle != NULL) {
             CloseHandle(hKeyHandle);

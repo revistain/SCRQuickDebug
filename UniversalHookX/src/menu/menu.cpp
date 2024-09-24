@@ -25,7 +25,6 @@ namespace Menu {
         if (!bShowMenu)
             return;
         
-        Debug_UI( );
         StarCraft_UI( );
         //ig::ShowDemoWindow( );
     }
