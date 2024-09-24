@@ -30,8 +30,9 @@ Variables getVariables() {
         */
         return vars;
     }
-	catch (const char* e) {
-        LOG("ERROR on getVariables: %s", e);
-        throw "error catch on getVariables";
+	catch (const std::string& str) {
+        LOG("ERROR on getVariables: %s", str.c_str());
+        end_signature( );
+        throw std::string("error on getVariables\n") + str;
     }
 }

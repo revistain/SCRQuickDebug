@@ -128,8 +128,8 @@ void onImguiStart() {
             }
         }
         loc_ptr = std::make_unique<Locations>(findMRGNAddr(), var_ptr->Locations);
-    } catch (const char* e) {
-        throw e;
+    } catch (const std::string& str) {
+        throw std::string("error on onImguiStart\n") + str;
     }
 }
 
@@ -162,8 +162,9 @@ void StarCraft_UI( ) {
         ////////////////    loop    ////////////////
 
     }
-    catch (const char* e) {
-        throw e;
+    catch (const std::string& str) {
+        ImGui::End( );
+        throw std::string("error on StarCraft UI\n") + str;
     }
     // ImGui::PopStyleColor( ); // Restore previous style
 

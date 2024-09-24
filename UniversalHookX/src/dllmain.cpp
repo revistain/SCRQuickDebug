@@ -18,10 +18,17 @@ DWORD WINAPI OnProcessDetach(LPVOID lpParam);
 
 HINSTANCE g_hInstance = NULL;
 HINSTANCE getDllHandle( ) { return g_hInstance; }
+void detachSelf() {
+    FreeLibraryAndExitThread(static_cast<HMODULE>(g_hInstance), 0);
+}
 
+bool quickExit = false;
+void setExit() {
+    quickExit = true;
+}
 DWORD WINAPI KeyPressListener(LPVOID lpParam) {
     while (true) {
-        if (GetAsyncKeyState(VK_OEM_MINUS) & 0x8000) {
+        if ((GetAsyncKeyState(VK_OEM_MINUS) & 0x8000) || quickExit) {
             std::cout << "'-' 키가 눌렸습니다. DLL을 분리합니다.\n";
             FreeLibraryAndExitThread(static_cast<HMODULE>(lpParam), 0);
         }
@@ -30,6 +37,7 @@ DWORD WINAPI KeyPressListener(LPVOID lpParam) {
     }
     return 0;
 }
+
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
     if (fdwReason == DLL_PROCESS_ATTACH) {

@@ -71,7 +71,7 @@ bool OpenTargetProcess() {
     // Get process ID
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnapshot == INVALID_HANDLE_VALUE) {
-        throw "Failed to create snapshot!";
+        throw std::string("Failed to create snapshot!\n");
         return 0;
     }
 
@@ -92,6 +92,7 @@ bool OpenTargetProcess() {
         return false;
     }
 
+    std::cout << "hProcess Opened\n";
     hProcess = OpenProcess(PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION, FALSE, processID);
     if (hProcess == NULL) {
         std::cerr << "Failed to open process. Error code: " << GetLastError() << std::endl;
@@ -208,8 +209,8 @@ uint32_t find_signature_address() {
         LOG("Seaching start\n");
         searchMemory(hProcess, signature, 10);
     }
-    catch (const char* e) {
-        throw e;
+    catch (const std::string& str) {
+        throw std::string("error in finding signature address\n") + str;
     }
 
     return getFoundAddr( );
@@ -232,12 +233,13 @@ void init_signature() {
         }
         else { std::cerr << "cannot find signature address\n"; }
     }
-    catch (const char* e) {
-        throw "Error finding signature: ", e;
+    catch (const std::string& str) {
+        throw std::string("Error finding signature\n") + str;
     }
 }
 
 void end_signature() {
+    std::cout << "hProcess Closed\n";
     CloseHandle(hProcess);
     processID = 0;
 }

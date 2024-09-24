@@ -10,7 +10,7 @@
 std::mutex foundMutex;
 std::vector<LPCVOID> foundAddresses; // 历厘且 皋葛府 林家
 uint32_t getFoundAddr() {
-    if (foundAddresses.size() > 1) throw "multiple signature Found!!";
+    if (foundAddresses.size() > 1) throw std::string("multiple signature Found!!\n");
     return reinterpret_cast<uint32_t>(foundAddresses[0]);
 }
 
@@ -102,14 +102,13 @@ void searchMemory(HANDLE hProcess, std::vector<uint8_t>& signature, int numThrea
     LOG("needle address: 0x%08p\n", &signature);
     HMODULE hModule = GetModuleHandle(TEXT("eudplib_debug.dll"));
     if (!hModule) {
-        throw "Failed to get DLL handle.";
+        throw std::string("Failed to get DLL handle\n");
     }
     LPCVOID dllBaseAddress = hModule;
     MODULEINFO modInfo;
     GetModuleInformation(GetCurrentProcess( ), hModule, &modInfo, sizeof(modInfo));
     SIZE_T dllSize = modInfo.SizeOfImage;
 
-    LOG("searchMemory start!\n");
     foundAddresses.clear();
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
@@ -118,7 +117,6 @@ void searchMemory(HANDLE hProcess, std::vector<uint8_t>& signature, int numThrea
     LPCVOID maxAddress = reinterpret_cast<LPCVOID>(0xFFFFFFFF);
     MEMORY_BASIC_INFORMATION mbi;
     std::cout << std::hex << "start address: 0x" << address << "  end: 0x" << maxAddress << "\n";
-
     
     // std::vector<std::thread> threads; // Uncomment if you decide to use threading
     buildBadCharTable(signature);
@@ -189,7 +187,6 @@ void searchMemory(HANDLE hProcess, std::vector<uint8_t>& signature, int numThrea
         }
     }
     else {
-        std::cout << "Pattern not found." << std::endl;
-        throw "Pattern not found.";
+        throw std::string("Pattern not found.\n");
     }
 }
