@@ -202,10 +202,15 @@ uint32_t find_signature_address() {
         return 0;
     }
 
-    std::string signature_str("GongjknOSDIfnwlnlSNDKlnfkopqfnkLDNSF");
-    std::vector<uint8_t> signature = StringToByteVector(signature_str);
-    LOG("Seaching start\n");
-    searchMemory(hProcess, signature, 10);
+    try {
+        std::string signature_str("GongjknOSDIfnwlnlSNDKlnfkopqfnkLDNSF");
+        std::vector<uint8_t> signature = StringToByteVector(signature_str);
+        LOG("Seaching start\n");
+        searchMemory(hProcess, signature, 10);
+    }
+    catch (const char* e) {
+        throw e;
+    }
 
     return getFoundAddr( );
 }
@@ -228,7 +233,7 @@ void init_signature() {
         else { std::cerr << "cannot find signature address\n"; }
     }
     catch (const char* e) {
-        throw "Error finding signature";
+        throw "Error finding signature: ", e;
     }
 }
 

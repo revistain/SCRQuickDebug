@@ -113,20 +113,24 @@ GameData updateGameData( ) {
 void onImguiStart() {
     if (var_ptr) return;
     // from eudplib
-    var_ptr = std::make_unique<Variables>(getVariables( ));
-    sortVariables(var_ptr);
+    try {
+        var_ptr = std::make_unique<Variables>(getVariables( ));
+        sortVariables(var_ptr);
 
-    // from process
-    if (OpenTargetProcess( )) {
-        setEXEAddr(GetModuleBaseAddress(L"StarCraft.exe"));
-        setUnittableAddr(GetModuleBaseAddress(L"Opengl32.dll"));
-        std::cout << "unittable: 0x" << std::hex << getUnittableAddr( ) << "\n";
-        if (getUnittableAddr( ) == 0x60000) {
-            setUnittableAddr(findUnitableAddr());
+        // from process
+        if (OpenTargetProcess( )) {
+            setEXEAddr(GetModuleBaseAddress(L"StarCraft.exe"));
+            setUnittableAddr(GetModuleBaseAddress(L"Opengl32.dll"));
             std::cout << "unittable: 0x" << std::hex << getUnittableAddr( ) << "\n";
+            if (getUnittableAddr( ) == 0x60000) {
+                setUnittableAddr(findUnitableAddr());
+                std::cout << "unittable: 0x" << std::hex << getUnittableAddr( ) << "\n";
+            }
         }
+        loc_ptr = std::make_unique<Locations>(findMRGNAddr(), var_ptr->Locations);
+    } catch (const char* e) {
+        throw e;
     }
-    loc_ptr = std::make_unique<Locations>(findMRGNAddr(), var_ptr->Locations);
 }
 
 // Your own window and controls
@@ -147,16 +151,20 @@ void StarCraft_UI( ) {
     ///////////////////////////////////////////////////////////////////////////////
     // Begin the window
     ImGui::Begin("My Full-Sized Window", nullptr, window_flags);
-    //////////////// initialize ////////////////
-    onImguiStart();
+    try {
+        //////////////// initialize ////////////////
+        onImguiStart();
 
-    ////////////////   update   ////////////////
-    GameData game_data = updateGameData( );
-    loc_ptr->drawLocations(var_ptr, game_data, loc_ptr->visible);
+        ////////////////   update   ////////////////
+        GameData game_data = updateGameData( );
+        loc_ptr->drawLocations(var_ptr, game_data, loc_ptr->visible);
 
-    ////////////////    loop    ////////////////
+        ////////////////    loop    ////////////////
 
-
+    }
+    catch (const char* e) {
+        throw e;
+    }
     // ImGui::PopStyleColor( ); // Restore previous style
 
     ////////////

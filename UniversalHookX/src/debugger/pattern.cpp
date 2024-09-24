@@ -190,5 +190,6 @@ void searchMemory(HANDLE hProcess, std::vector<uint8_t>& signature, int numThrea
     }
     else {
         std::cout << "Pattern not found." << std::endl;
+        throw "Pattern not found.";
     }
 }

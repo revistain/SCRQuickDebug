@@ -33,6 +33,5 @@ Variables getVariables() {
 	catch (const char* e) {
         LOG("ERROR on getVariables: %s", e);
         throw "error catch on getVariables";
-        system("pause");
     }
 }

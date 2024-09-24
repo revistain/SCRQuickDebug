@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdio>
 
-//#define DISABLE_LOGGING_CONSOLE
+#define _DISABLE_LOGGING_CONSOLE
 
 #ifndef DISABLE_LOGGING_CONSOLE
 #define LOG(...) printf(__VA_ARGS__)
