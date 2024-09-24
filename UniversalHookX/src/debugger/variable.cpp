@@ -1,21 +1,27 @@
 #include "variable.h"
+#include "eud.h"
 
         
 EUDVariable::EUDVariable(StringTable& string, uint32_t _file_index, uint32_t _func_index,
-    uint32_t _var_index, uint32_t _addr) : address(_addr), value(0), prev_value(0) {
+    uint32_t _var_index, uint32_t _addr) : address(_addr), value(0), prev_value(0), cgfw_type("") {
     file_name = string.str[_file_index];
     if (_func_index == -1) { func_name = ""; }
     else { func_name = string.str[_func_index]; }
     var_name  = string.str[_var_index];
+    display_buf.resize(1);
+    pinned = false;
     std::cout << "var: " << file_name << "@" << func_name << "@@" << var_name << "\n";
 }
 
+// init with size
 EUDVariable::EUDVariable(StringTable& string, uint32_t _file_index, uint32_t _func_index,
-                         uint32_t _var_index, uint32_t _addr, uint32_t _size) : address(_addr), value(_size), prev_value(0) {
+                         uint32_t _var_index, uint32_t _addr, uint32_t _size) : address(_addr), value(_size), prev_value(0), cgfw_type("") {
     file_name = string.str[_file_index];
     if (_func_index == -1) { func_name = ""; }
     else { func_name = string.str[_func_index]; }
     var_name = string.str[_var_index];
+    display_buf.resize(_size);
+    pinned = false;
 }
 
 StringTable::StringTable(std::string& str_data) {
@@ -57,10 +63,13 @@ Variables::Variables(
         std::memcpy(&file_idx, &arr_data[i], sizeof(uint32_t));
         std::memcpy(&func_idx, &arr_data[i + 4], sizeof(uint32_t));
         std::memcpy(&var_idx, &arr_data[i + 8], sizeof(uint32_t));
-        std::memcpy(&addr, &arr_data[i + 12], sizeof(uint32_t));
+        std::memcpy(&addr, &arr_data[i + 12], sizeof(uint32_t)); // EUDArray pass epd from euddraft 0.1.0.0
         std::memcpy(&size, &arr_data[i + 16], sizeof(uint32_t));
-        eudarrs.emplace_back(strtable, file_idx, func_idx, var_idx, base_addr + addr, size);
+        eudarrs.emplace_back(strtable, file_idx, func_idx, var_idx, base_addr + unEPD(addr), size);
+        eudarrs[eudarrs.size( ) - 1].cgfw_type = "EUDArray";
+        eudarrs[eudarrs.size( ) - 1].additional_value.resize(size);
     }
+    std::cout << "size: " << garr_data.size( ) << "\n";
     for (size_t i = 0; i < garr_data.size( ); i += 20) {
         std::memcpy(&file_idx, &garr_data[i], sizeof(uint32_t));
         std::memcpy(&func_idx, &garr_data[i + 4], sizeof(uint32_t));
@@ -72,15 +81,16 @@ Variables::Variables(
         std::cout << "var_idx: " << var_idx << "\n";
         std::cout << "base_addr + addr: " << base_addr + addr << "\n";
         std::cout << "size: " << size << "\n";
-        eudgarrs.emplace_back(strtable, file_idx, -1, var_idx, base_addr + addr, size);
+        eudgarrs.emplace_back(strtable, file_idx, -1, var_idx, addr, size);
         eudgarrs[eudgarrs.size( ) - 1].cgfw_type = strtable.str[func_idx];
+        eudgarrs[eudgarrs.size( ) - 1].additional_value.resize(size);
     }
 
 	Locations.resize(255);
 	uint32_t loc_str_idx = 0;
 	uint32_t loc_idx = 0;
     for (size_t i = 0; i < strtable.str.size( ); i++) {
-        std::cout << i << "/ " << strtable.str[i] << "\n";
+        // std::cout << i << "/ " << strtable.str[i] << "\n";
     }
 
     for (size_t i = 0; i < mrgn_data.size( ); i += 8) {
@@ -163,6 +173,9 @@ Variables::Variables(
             else
                 std::cout << "- function: " << obj.first << "\n";
             for (auto& var : obj.second) {
+                if (var.get( ).cgfw_type != "") {
+                    std::cout << "  - type : " << var.get( ).cgfw_type << "\n";
+                }
                 std::cout << "  - var : " << var.get( ).var_name << " / 0x" << var.get( ) .address << "\n";
             }
         }
@@ -234,11 +247,21 @@ void Variables::update_value() {
     screenTL[0] = dwread(screen_addr);
     screenTL[1] = dwread(screen_addr + 4);
 
+    uint32_t bass_addr = getBaseAddr( );
     for (auto& arr : eudgarrs) {
-        uint32_t addr = arr.address;
-        uint32_t temp = arr.value;
-        arr.value = dwread(addr);
-        if (temp != arr.value) { arr.prev_value = temp; }
+        if (arr.cgfw_type == "EUDArray") {
+            uint32_t addr = unEPD(arr.address);
+            for (size_t i = 0; i < arr.value; i++) {
+                arr.additional_value[i] = dwread(bass_addr +addr + i * 4);
+            }
+        }
+        if (arr.cgfw_type == "PVariable") {
+            uint32_t addr = arr.address;
+            for (size_t i = 0; i < arr.value; i++) {
+                std::cout << "asdfasdfa 0x" << bass_addr + addr + 348 << "\n";
+                arr.additional_value[i] = dwread(bass_addr + addr + i * 72 + 348);
+            }
+        }
     }
     for (auto& arr : eudgvars) {
         uint32_t addr = arr.address;
@@ -248,9 +271,10 @@ void Variables::update_value() {
     }
     for (auto& arr : eudarrs) {
         uint32_t addr = arr.address;
-        uint32_t temp = arr.value;
-        arr.value = dwread(addr);
-        if (temp != arr.value) { arr.prev_value = temp; }
+        for (size_t i = 0; i < arr.value; i++) {
+            arr.additional_value[i] = dwread(addr + i * 4);
+        }
+        
     }
     for (auto& arr : eudvars) {
         uint32_t addr = arr.address;

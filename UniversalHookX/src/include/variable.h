@@ -21,6 +21,9 @@ public:
     std::string func_name;
     std::string var_name;
     std::string cgfw_type;
+    std::vector<uint32_t> additional_value;
+    std::vector<uint32_t> display_buf;
+    bool pinned;
     EUDVariable(StringTable& string, uint32_t _file_index, uint32_t _func_index, uint32_t _var_index, uint32_t _addr);
     EUDVariable(StringTable& string, uint32_t _file_index, uint32_t _func_index, uint32_t _var_index, uint32_t _addr, uint32_t size);
 };

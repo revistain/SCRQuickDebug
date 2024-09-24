@@ -19,8 +19,6 @@ std::unique_ptr<Locations> loc_ptr;
 bool starcraft_input = true;
 static bool is_var_popup_open = false;
 static bool isLocationVisible[255];
-std::vector<uint32_t> var_buf;
-std::vector<char> var_pin;
 GameData updateGameData( ) {
     // from eudplib
     var_ptr->update_value( );
@@ -41,11 +39,6 @@ void onImguiStart() {
     if (var_ptr) return;
     // from eudplib
     var_ptr = std::make_unique<Variables>(getVariables( ));
-    uint32_t var_buf_size = 0;
-    for (auto& var_pair : var_ptr->file_map) { var_buf_size  += var_pair.second.size( ); }
-    var_pin.resize(var_buf_size);
-    var_buf.resize(var_buf_size * 2);
-    std::cout << "var_buf_size: " << std::dec << var_buf_size << "\n";
 
     // from process
     if (OpenTargetProcess( )) {
@@ -174,7 +167,7 @@ void StarCraft_UI( ) {
     }
 
     if (is_var_popup_open) {
-        ImGui::SetNextWindowSize(ImVec2(485, 600));
+        ImGui::SetNextWindowSize(ImVec2(545, 600));
     }
     if (is_var_popup_open && ImGui::Begin("EUDVariable Inspector", nullptr, ImGuiWindowFlags_NoResize)) {
         static bool isHex = true;
@@ -198,7 +191,7 @@ void StarCraft_UI( ) {
         if (ImGui::BeginTabBar("EUDVariables tab", tab_bar_flags)) {
             if (ImGui::BeginTabItem("EUDVariables")) {
                 ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
-                ImGui::BeginChild("var_child", ImVec2(470, 480), true, ImGuiWindowFlags_None);
+                ImGui::BeginChild("var_child", ImVec2(530, 480), true, ImGuiWindowFlags_None);
 
                 int var_idx = 0;
                 int var_table_idx = 0;
@@ -211,8 +204,9 @@ void StarCraft_UI( ) {
                             if (ImGui::TreeNode((void*)(intptr_t)var_table_idx, "%s", func_name.c_str( ))) {
                                 ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX;
 
-                                if (ImGui::BeginTable(std::format("{},##,{}", func_name, var_idx).c_str(), 4, table_flags)) {
-                                    ImGui::TableSetupColumn("EUDVariable", ImGuiTableColumnFlags_WidthFixed, 130.0f);
+                                if (ImGui::BeginTable(std::format("{},##,{}", func_name, var_idx).c_str(), 5, table_flags)) {
+                                    ImGui::TableSetupColumn("type", ImGuiTableColumnFlags_WidthFixed, 90.0f);
+                                    ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthFixed, 120.0f);
                                     ImGui::TableSetupColumn("previous", ImGuiTableColumnFlags_WidthFixed, 100.0f);
                                     ImGui::TableSetupColumn("current", ImGuiTableColumnFlags_WidthFixed, 100.0f);
                                     ImGui::TableSetupColumn("Pin", ImGuiTableColumnFlags_WidthFixed, 26.0f);
@@ -221,46 +215,69 @@ void StarCraft_UI( ) {
                                         auto& obj = func.second[row];
                                         ImGui::TableNextRow( );
                                         ImGui::TableSetColumnIndex(0);
-                                        ImGui::Text(obj.get().var_name.c_str( ));
+                                        if (obj.get( ).cgfw_type == "") {
+                                            ImGui::Text("EUDVariable");
 
-                                        // previous value
-                                        ImGui::TableSetColumnIndex(1);
-                                        if (isHex)
-                                            ImGui::Text("0x%08X", obj.get().prev_value);
-                                        else
-                                            ImGui::Text("%d", obj.get( ).prev_value);
+                                            ImGui::TableNextColumn();
+                                            ImGui::Text(obj.get( ).var_name.c_str( ));
 
-                                        // current value
-                                        ImGui::TableSetColumnIndex(2);
-                                        var_buf[var_idx + 1] = obj.get( ).value;
-                                        if (isHex) {
-                                            char buf[11];
-                                            snprintf(buf, sizeof(buf), "0x%08X", var_buf[var_idx + 1]); // 16진수로 변환
-                                            ImGui::SetNextItemWidth(90);
-                                            ImGui::InputText(std::format("##var_hex{}", var_idx).c_str( ), buf, sizeof(buf), ImGuiInputTextFlags_CharsHexadecimal);
-                                            if (ImGui::IsItemDeactivatedAfterEdit( )) {
-                                                std::cout << "foucus\n";
-                                                std::cout << "buf: " << std::hex << buf << " / " << static_cast<uint32_t>(std::stoul(buf + 2, nullptr, 16)) << "\n";
-                                                Internal::dwwrite(obj.get( ).address, static_cast<uint32_t>(std::stoul(buf + 2, nullptr, 16)));
+                                            // previous value
+                                            ImGui::TableNextColumn();
+                                            if (isHex)
+                                                ImGui::Text("0x%08X", obj.get( ).prev_value);
+                                            else
+                                                ImGui::Text("%d", obj.get( ).prev_value);
+
+                                            // current value
+                                            ImGui::TableNextColumn();
+                                            inputable_form(isHex, obj, var_idx, writeEUDVariable);
+
+                                            // pinned
+                                            ImGui::TableNextColumn();
+                                            ImGui::SetNextItemWidth(25);
+                                            if (ImGui::Checkbox(std::format("##pin{}", var_idx).c_str( ), reinterpret_cast<bool*>(&obj.get( ).pinned))) {
+                                                std::cout << std::dec << var_idx / 2 << ":checked / " << (int)obj.get( ).pinned << "\n";
                                             }
-                                        } else {
-                                            char buf[20];
-                                            snprintf(buf, sizeof(buf), "%d", var_buf[var_idx + 1]); // 10진수로 변환
-                                            ImGui::SetNextItemWidth(90);
-                                            ImGui::InputText(std::format("##var_dec{}", var_idx).c_str( ), buf, sizeof(buf), ImGuiInputTextFlags_CharsDecimal);
-                                            if (ImGui::IsItemDeactivatedAfterEdit( )) {
-                                                std::cout << "foucus\n";
-                                                Internal::dwwrite(obj.get( ).address, static_cast<uint32_t>(std::stoul(buf, nullptr, 10)));
+                                            var_idx += 2;
+                                        } 
+                                        else if(obj.get( ).cgfw_type == "EUDArray") {
+                                            bool opened = ImGui::TreeNodeEx("EUDArray");
+                                            ImGui::TableNextColumn( );
+                                            ImGui::Text(obj.get( ).var_name.c_str( ));
+                                            ImGui::TableNextColumn( );
+                                            ImGui::TableNextColumn( );
+                                            ImGui::Text("size: %d", obj.get( ).value);
+                                            if (opened) {
+                                                for (size_t arr_idx = 0; arr_idx < obj.get().value; arr_idx++) {
+                                                    ImGui::TableNextRow( );
+                                                    ImGui::TableSetColumnIndex(1);
+                                                    ImGui::TreeNodeEx(std::format("{}##{}", arr_idx, obj.get( ).var_name.c_str( )).c_str( ), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+                                                    ImGui::TableNextColumn( );
+                                                    ImGui::TableNextColumn( );
+                                                    ImGui::Text("%08X", obj.get( ).additional_value[arr_idx]);
+                                                }
+                                                ImGui::TreePop( );
                                             }
                                         }
-
-                                        // pinned
-                                        ImGui::TableSetColumnIndex(3);
-                                        ImGui::SetNextItemWidth(25);
-                                        if (ImGui::Checkbox(std::format("##pin{}", var_idx).c_str( ), reinterpret_cast<bool*>(&var_pin[var_idx / 2]))) {
-                                            std::cout << std::dec << var_idx / 2 << ":checked / " << (int)var_pin[var_idx / 2] << "\n";
+                                        else if (obj.get( ).cgfw_type == "PVariable") {
+                                            bool opened = ImGui::TreeNodeEx("PVariable");
+                                            ImGui::TableNextColumn( );
+                                            ImGui::Text(obj.get( ).var_name.c_str( ));
+                                            ImGui::TableNextColumn( );
+                                            ImGui::TableNextColumn( );
+                                            ImGui::Text("size: %d", obj.get( ).value);
+                                            if (opened) {
+                                                for (size_t arr_idx = 0; arr_idx < obj.get( ).value; arr_idx++) {
+                                                    ImGui::TableNextRow( );
+                                                    ImGui::TableSetColumnIndex(1);
+                                                    ImGui::TreeNodeEx(std::format("{}##{}", arr_idx, obj.get( ).var_name.c_str( )).c_str( ), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+                                                    ImGui::TableNextColumn( );
+                                                    ImGui::TableNextColumn( );
+                                                    ImGui::Text("%08X", obj.get( ).additional_value[arr_idx]);
+                                                }
+                                                ImGui::TreePop( );
+                                            }
                                         }
-                                        var_idx += 2;
                                     }
                                     ImGui::EndTable( );
                                 }
