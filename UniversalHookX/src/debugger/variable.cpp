@@ -92,6 +92,7 @@ Variables::Variables(
     }
 
 	Locations.resize(255);
+    LocationsUse.resize(255);
 	uint32_t loc_str_idx = 0;
 	uint32_t loc_idx = 0;
     for (size_t i = 0; i < strtable.str.size( ); i++) {
@@ -102,6 +103,7 @@ Variables::Variables(
         std::memcpy(&loc_str_idx, &mrgn_data[i], sizeof(uint32_t));
         std::memcpy(&loc_idx, &mrgn_data[i + 4], sizeof(uint32_t));
         Locations[loc_idx] = strtable.str[loc_str_idx];
+        LocationsUse[loc_idx] = true;
 	}
 }
 

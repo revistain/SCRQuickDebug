@@ -94,7 +94,6 @@ void sortVariables(std::unique_ptr<Variables>& var_ptr) {
 
 bool starcraft_input = true;
 static bool is_var_popup_open = false;
-static bool isLocationVisible[255];
 GameData updateGameData( ) {
     // from eudplib
     var_ptr->update_value( );
@@ -148,14 +147,12 @@ void StarCraft_UI( ) {
     ///////////////////////////////////////////////////////////////////////////////
     // Begin the window
     ImGui::Begin("My Full-Sized Window", nullptr, window_flags);
-    ImGui::PushFont(getFont(30)); // Use the specific font size
-    ImGui::Text("This text uses the Kostart10 font.");
     //////////////// initialize ////////////////
     onImguiStart();
 
     ////////////////   update   ////////////////
     GameData game_data = updateGameData( );
-    loc_ptr->drawLocations(var_ptr, game_data);
+    loc_ptr->drawLocations(var_ptr, game_data, loc_ptr->visible);
 
     ////////////////    loop    ////////////////
 
@@ -206,24 +203,20 @@ void StarCraft_UI( ) {
                     ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 22);
                     ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 85.0f);
                     ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 22);
-                    for (int row = 0; row < 64; row++) {
-                            ImGui::TableNextRow( );
-                        for (int column = 0; column < 8; column+=2) {
-                            if (int(row * 4 + column / 2) >= 255) break;
-                            ImGui::TableSetColumnIndex(column);
-                            if (loc_ptr->locations[row * 4 + column / 2].label == "") {
-                                ImGui::Text("Location %d", row * 4 + column / 2 + 1);
-                            }
-                            else {
-                                ImGui::Text(loc_ptr->locations[row * 4 + column / 2].label.c_str( ));
-                            }
-   
-                        }
-                        for (int column = 1; column < 8; column += 2) {
-                            if (int(row * 4 + column / 2) >= 255) break;
-                            ImGui::TableSetColumnIndex(column);
+                    uint32_t row_count = 0;
+                    ImGui::TableNextRow( );
+                    for (uint32_t loc_idx = 0; loc_idx < 255; loc_idx++) {
+                        if (var_ptr->LocationsUse[loc_idx]) {
+                            ImGui::TableNextColumn( );
+                            if (loc_ptr->locations[loc_idx].label == "") ImGui::Text("Location %d", loc_idx + 1);
+                            else ImGui::Text(loc_ptr->locations[loc_idx].label.c_str( ));
+                            ImGui::TableNextColumn( );
                             ImGui::SetNextItemWidth(16);
-                            ImGui::Checkbox("", &isLocationVisible[row * 4 + column / 2]);
+                            ImGui::Checkbox(std::format("##{}", loc_idx).c_str( ), &loc_ptr->visible[loc_idx]);
+                            row_count++;
+                            if (row_count % 4 == 0) {
+                                ImGui::TableNextRow( );
+                            }
                         }
                     }
                     ImGui::EndTable( );
@@ -242,7 +235,7 @@ void StarCraft_UI( ) {
         static bool isHex = true;
         // things same line with tabs
         float windowWidth = ImGui::GetWindowWidth( );
-        float buttonWidth = 150.0f; // 원하는 버튼 너비
+        float buttonWidth = 180.0f; // 원하는 버튼 너비
         ImGui::SetCursorPosX(windowWidth - buttonWidth);
         ImGui::Text("Dec");
         ImGui::SameLine( );
@@ -250,7 +243,7 @@ void StarCraft_UI( ) {
         ImGui::SameLine( );
         ImGui::Text("Hex");
         ImGui::SameLine( );
-        ImGui::Text("   ");
+        ImGui::Text("  ");
         ImGui::SameLine( );
         if (ImGui::Button("Close"))
             is_var_popup_open = false;
@@ -260,7 +253,7 @@ void StarCraft_UI( ) {
         if (ImGui::BeginTabBar("EUDVariables tab", tab_bar_flags)) {
             if (ImGui::BeginTabItem("EUDVariables")) {
                 ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
-                ImGui::BeginChild("var_child", ImVec2(530, 480), true, ImGuiWindowFlags_None);
+                ImGui::BeginChild("var_child", ImVec2(540, 480), true, ImGuiWindowFlags_None);
 
                 int var_idx = 0;
                 int var_table_idx = 0;
@@ -277,8 +270,8 @@ void StarCraft_UI( ) {
                                 ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX;
 
                                 if (ImGui::BeginTable(std::format("{},##,{}", func_name, var_idx).c_str( ), 5, table_flags)) {
-                                    ImGui::TableSetupColumn("type", ImGuiTableColumnFlags_WidthFixed, 90.0f);
-                                    ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthFixed, 120.0f);
+                                    ImGui::TableSetupColumn("type", ImGuiTableColumnFlags_WidthFixed, 92.0f);
+                                    ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthFixed, 128.0f);
                                     ImGui::TableSetupColumn("previous", ImGuiTableColumnFlags_WidthFixed, 100.0f);
                                     ImGui::TableSetupColumn("current", ImGuiTableColumnFlags_WidthFixed, 100.0f);
                                     ImGui::TableSetupColumn("Pin", ImGuiTableColumnFlags_WidthFixed, 26.0f);
@@ -308,7 +301,7 @@ void StarCraft_UI( ) {
                                             ImGui::TableNextColumn( );
                                             ImGui::SetNextItemWidth(25);
                                             if (ImGui::Checkbox(std::format("##pin{}", var_idx).c_str( ), reinterpret_cast<bool*>(&obj.pinned))) {
-                                                std::cout << std::dec << var_idx / 2 << ":checked / " << (int)obj.pinned << "\n";
+                                                std::cout << std::dec << var_idx << ":checked / " << (int)obj.pinned << "\n";
                                             }
                                         } else if (obj.cgfw_type == "EUDArray") {
                                             bool opened = ImGui::TreeNodeEx(std::format("EUDArray##{}", obj.var_name).c_str( ));
@@ -320,7 +313,7 @@ void StarCraft_UI( ) {
                                             ImGui::TableNextColumn( );
                                             ImGui::SetNextItemWidth(25);
                                             if (ImGui::Checkbox(std::format("##pin{}", var_idx).c_str( ), reinterpret_cast<bool*>(&obj.pinned))) {
-                                                std::cout << std::dec << var_idx / 2 << ":checked / " << (int)obj.pinned << "\n";
+                                                std::cout << std::dec << var_idx << ":checked / " << (int)obj.pinned << "\n";
                                             }
                                             if (opened) {
                                                 for (size_t arr_idx = 0; arr_idx < obj.value; arr_idx++) {
@@ -330,6 +323,7 @@ void StarCraft_UI( ) {
                                                     ImGui::TableNextColumn( );
                                                     ImGui::TableNextColumn( );
                                                     inputable_form(isHex, arr_idx, obj, var_idx, writeEUDArray);
+                                                    var_idx++;
                                                 }
                                                 ImGui::TreePop( );
                                             }
@@ -344,7 +338,7 @@ void StarCraft_UI( ) {
                                             ImGui::TableNextColumn( );
                                             ImGui::SetNextItemWidth(25);
                                             if (ImGui::Checkbox(std::format("##pin{}", var_idx).c_str( ), reinterpret_cast<bool*>(&obj.pinned))) {
-                                                std::cout << std::dec << var_idx / 2 << ":checked / " << (int)obj.pinned << "\n";
+                                                std::cout << std::dec << var_idx << ":checked / " << (int)obj.pinned << "\n";
                                             }
                                             if (opened) {
                                                 for (size_t parr_idx = 0; parr_idx < obj.value; parr_idx++) {
@@ -354,6 +348,7 @@ void StarCraft_UI( ) {
                                                     ImGui::TableNextColumn( );
                                                     ImGui::TableNextColumn( );
                                                     inputable_form(isHex, parr_idx, obj, var_idx, writeEUDVArray);
+                                                    var_idx++;
                                                 }
                                                 ImGui::TreePop( );
                                             }
@@ -371,13 +366,13 @@ void StarCraft_UI( ) {
                                                 obj.watchingDb = true;
                                             }
                                             ImGui::TableNextColumn( );
-                                            ImGui::Text(std::format("{}", obj.value).c_str( ));
+                                            ImGui::Text(std::format("size: {}", obj.value).c_str( ));
 
                                             // pinned
                                             ImGui::TableNextColumn( );
                                             ImGui::SetNextItemWidth(25);
                                             if (ImGui::Checkbox(std::format("##pin{}", var_idx).c_str( ), reinterpret_cast<bool*>(&obj.pinned))) {
-                                                std::cout << std::dec << var_idx / 2 << ":checked / " << (int)obj.pinned << "\n";
+                                                std::cout << std::dec << var_idx << ":checked / " << (int)obj.pinned << "\n";
                                             }
                                         } else if (obj.cgfw_type == "Db") {
                                             ImGui::Text("Db");
@@ -391,13 +386,13 @@ void StarCraft_UI( ) {
                                                 obj.watchingDb = true;
                                             }
                                             ImGui::TableNextColumn( );
-                                            ImGui::Text(std::format("{}", obj.value).c_str( ));
+                                            ImGui::Text(std::format("size: {}", obj.value).c_str( ));
 
                                             // pinned
                                             ImGui::TableNextColumn( );
                                             ImGui::SetNextItemWidth(25);
                                             if (ImGui::Checkbox(std::format("##pin{}", var_idx).c_str( ), reinterpret_cast<bool*>(&obj.pinned))) {
-                                                std::cout << std::dec << var_idx / 2 << ":checked / " << (int)obj.pinned << "\n";
+                                                std::cout << std::dec << var_idx << ":checked / " << (int)obj.pinned << "\n";
                                             }
                                         }
                                         var_idx++;
@@ -416,99 +411,155 @@ void StarCraft_UI( ) {
             }
             if (ImGui::BeginTabItem("pin")) {
                 ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
-                ImGui::BeginChild("pin_child", ImVec2(470, 480), true, ImGuiWindowFlags_None);
+                ImGui::BeginChild("pin_child", ImVec2(530, 480), true, ImGuiWindowFlags_None);
 
                 int var_idx = 0;
-                int var_table_idx = 0;
-
-                /*
-                for (auto& func_var : var_ptr->func_var) {
-                    bool pin_flag = false;
-                    for (size_t i = 0; i < func_var.second.size( ); i++) {
-                        if (var_pin[var_idx / 2 + i] == true) {
-                            pin_flag = true;
-                            break;
-                        }
-                    }
-                    if (!pin_flag) {
-                        var_idx += (2 * func_var.second.size( ));
-                        continue;
-                    }
-                    if (ImGui::TreeNode((void*)(intptr_t)var_table_idx, "%s", func_var.first.c_str( ))) {
-                        ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX;
-                        if (ImGui::BeginTable(func_var.first.c_str( ), 4, table_flags)) {
-                            ImGui::TableSetupColumn("EUDVariable", ImGuiTableColumnFlags_WidthFixed, 130.0f);
-                            ImGui::TableSetupColumn("previous", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-                            ImGui::TableSetupColumn("current", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-                            ImGui::TableSetupColumn("Pin", ImGuiTableColumnFlags_WidthFixed, 26.0f);
-                            ImGui::TableHeadersRow( );
-                            
-                            for (int row = 0; row < func_var.second.size( ); row++) {
-                                if (!var_pin[var_idx / 2]) {
-                                    var_idx += 2;
+                ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX;
+                if (ImGui::BeginTable("pinned", 6, table_flags)) {
+                    ImGui::TableSetupColumn("func", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+                    ImGui::TableSetupColumn("type", ImGuiTableColumnFlags_WidthFixed, 88.0f);
+                    ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthFixed, 88.0f);
+                    ImGui::TableSetupColumn("previous", ImGuiTableColumnFlags_WidthFixed, 86.0f);
+                    ImGui::TableSetupColumn("current", ImGuiTableColumnFlags_WidthFixed, 86.0f);
+                    ImGui::TableSetupColumn("Pin", ImGuiTableColumnFlags_WidthFixed, 26.0f);
+                    ImGui::TableHeadersRow( );
+                    for (auto& file : var_ptr->file_map) {
+                        for (auto& func : file.second) {
+                            for (int row = 0; row < func.second.size( ); row++) {
+                                auto& obj = func.second[row].get( );
+                                if (!obj.pinned)
                                     continue;
-                                }
                                 ImGui::TableNextRow( );
-                                ImGui::TableSetColumnIndex(0);
-                                ImGui::Text(var_ptr->strtable.var_str[func_var.second[row].get( ).var_index].c_str( ));
-
-                                // previous value
+                                ImGui::Text(obj.func_name.c_str());
                                 ImGui::TableSetColumnIndex(1);
-                                if (isHex)
-                                    ImGui::Text("0x%08X", var_buf[var_idx]);
-                                else
-                                    ImGui::Text("%d", var_buf[var_idx]);
+                                if (obj.cgfw_type == "") {
+                                    ImGui::Text("EUDVariable");
 
-                                // current value
-                                ImGui::TableSetColumnIndex(2);
-                                var_buf[var_idx + 1] = func_var.second[row].get( ).value;
-                                if (isHex) {
-                                    char buf[11];
-                                    snprintf(buf, sizeof(buf), "0x%08X", var_buf[var_idx + 1]); // 16진수로 변환
-                                    ImGui::SetNextItemWidth(90);
-                                    ImGui::InputText(std::format("##var_hex{}", var_idx).c_str( ), buf, sizeof(buf), ImGuiInputTextFlags_CharsHexadecimal);
-                                    if (ImGui::IsItemDeactivatedAfterEdit( )) {
-                                        std::cout << "foucus\n";
-                                        std::cout << "buf: " << std::hex << buf << " / " << static_cast<uint32_t>(std::stoul(buf + 2, nullptr, 16)) << "\n";
-                                        dwwrite(func_var.second[row].get( ).address, static_cast<uint32_t>(std::stoul(buf + 2, nullptr, 16)));
+                                    ImGui::TableNextColumn( );
+                                    ImGui::Text(obj.var_name.c_str( ));
+
+                                    //// previous value
+                                    ImGui::TableNextColumn( );
+                                    if (isHex)
+                                        ImGui::Text("0x%08X", obj.prev_value);
+                                    else
+                                        ImGui::Text("%d", obj.prev_value);
+
+                                    // current value
+                                    ImGui::TableNextColumn( );
+                                    inputable_form(isHex, 0, obj, var_idx, writeEUDVariable);
+
+                                    // pinned
+                                    ImGui::TableNextColumn( );
+                                    ImGui::SetNextItemWidth(25);
+                                    if (ImGui::Checkbox(std::format("##pin{}", var_idx).c_str( ), reinterpret_cast<bool*>(&obj.pinned))) {
+                                        std::cout << std::dec << var_idx << ":checked / " << (int)obj.pinned << "\n";
                                     }
-                                } else {
-                                    char buf[20];
-                                    snprintf(buf, sizeof(buf), "%d", var_buf[var_idx + 1]); // 10진수로 변환
-                                    ImGui::SetNextItemWidth(90);
-                                    ImGui::InputText(std::format("##var_dec{}", var_idx).c_str( ), buf, sizeof(buf), ImGuiInputTextFlags_CharsDecimal);
-                                    if (ImGui::IsItemDeactivatedAfterEdit( )) {
-                                        std::cout << "foucus\n";
-                                        dwwrite(func_var.second[row].get( ).address, static_cast<uint32_t>(std::stoul(buf, nullptr, 10)));
+                                } else if (obj.cgfw_type == "EUDArray") {
+                                    bool opened = ImGui::TreeNodeEx(std::format("EUDArray##{}", obj.var_name).c_str( ));
+                                    ImGui::TableNextColumn( );
+                                    ImGui::Text(obj.var_name.c_str( ));
+                                    ImGui::TableNextColumn( );
+                                    ImGui::TableNextColumn( );
+                                    ImGui::Text("size: %d", obj.value);
+                                    ImGui::TableNextColumn( );
+                                    ImGui::SetNextItemWidth(25);
+                                    if (ImGui::Checkbox(std::format("##pin{}", var_idx).c_str( ), reinterpret_cast<bool*>(&obj.pinned))) {
+                                        std::cout << std::dec << var_idx << ":checked / " << (int)obj.pinned << "\n";
+                                    }
+                                    if (opened) {
+                                        for (size_t arr_idx = 0; arr_idx < obj.value; arr_idx++) {
+                                            ImGui::TableNextRow( );
+                                            ImGui::TableSetColumnIndex(2);
+                                            ImGui::TreeNodeEx(std::format("{}##{}", arr_idx, obj.var_name.c_str( )).c_str( ), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+                                            ImGui::TableNextColumn( );
+                                            ImGui::TableNextColumn( );
+                                            inputable_form(isHex, arr_idx, obj, var_idx, writeEUDArray);
+                                            var_idx++;
+                                        }
+                                        ImGui::TreePop( );
+                                    }
+                                } else if (obj.cgfw_type == "PVariable") {
+                                    bool opened = ImGui::TreeNodeEx(std::format("PVariable##{}", obj.var_name).c_str( ));
+                                    ImGui::TableNextColumn( );
+                                    ImGui::Text(obj.var_name.c_str( ));
+                                    ImGui::TableNextColumn( );
+                                    ImGui::TableNextColumn( );
+                                    ImGui::Text("size: %d", obj.value);
+                                    ImGui::TableNextColumn( );
+                                    ImGui::SetNextItemWidth(25);
+                                    if (ImGui::Checkbox(std::format("##pin{}", var_idx).c_str( ), reinterpret_cast<bool*>(&obj.pinned))) {
+                                        std::cout << std::dec << var_idx << ":checked / " << (int)obj.pinned << "\n";
+                                    }
+                                    if (opened) {
+                                        for (size_t parr_idx = 0; parr_idx < obj.value; parr_idx++) {
+                                            ImGui::TableNextRow( );
+                                            ImGui::TableSetColumnIndex(2);
+                                            ImGui::TreeNodeEx(std::format("{}##{}", parr_idx, obj.var_name.c_str( )).c_str( ), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+                                            ImGui::TableNextColumn( );
+                                            ImGui::TableNextColumn( );
+                                            inputable_form(isHex, parr_idx, obj, var_idx, writeEUDVArray);
+                                            var_idx++;
+                                        }
+                                        ImGui::TreePop( );
+                                    }
+                                } else if (obj.cgfw_type == "StringBuffer") {
+                                    ImGui::Text("StringBuffer");
+
+                                    ImGui::TableNextColumn( );
+                                    ImGui::Text(obj.var_name.c_str( ));
+
+                                    ImGui::TableNextColumn( );
+                                    if (ImGui::Button(std::format("view##{}{}", obj.var_name, var_idx).c_str( ))) {
+                                        obj.updateDb( );
+                                        obj.mem_edit.Open = true;
+                                        obj.watchingDb = true;
+                                    }
+                                    ImGui::TableNextColumn( );
+                                    ImGui::Text(std::format("size: {}", obj.value).c_str( ));
+
+                                    // pinned
+                                    ImGui::TableNextColumn( );
+                                    ImGui::SetNextItemWidth(25);
+                                    if (ImGui::Checkbox(std::format("##pin{}", var_idx).c_str( ), reinterpret_cast<bool*>(&obj.pinned))) {
+                                        std::cout << std::dec << var_idx << ":checked / " << (int)obj.pinned << "\n";
+                                    }
+                                } else if (obj.cgfw_type == "Db") {
+                                    ImGui::Text("Db");
+
+                                    ImGui::TableNextColumn( );
+                                    ImGui::Text(obj.var_name.c_str( ));
+
+                                    ImGui::TableNextColumn( );
+                                    if (ImGui::Button(std::format("view##{}{}", obj.var_name, var_idx).c_str( ))) {
+                                        obj.updateDb( );
+                                        obj.watchingDb = true;
+                                    }
+                                    ImGui::TableNextColumn( );
+                                    ImGui::Text(std::format("size: {}", obj.value).c_str( ));
+
+                                    // pinned
+                                    ImGui::TableNextColumn( );
+                                    ImGui::SetNextItemWidth(25);
+                                    if (ImGui::Checkbox(std::format("##pin{}", var_idx).c_str( ), reinterpret_cast<bool*>(&obj.pinned))) {
+                                        std::cout << std::dec << var_idx << ":checked / " << (int)obj.pinned << "\n";
                                     }
                                 }
-
-                                // pinned
-                                ImGui::TableSetColumnIndex(3);
-                                ImGui::SetNextItemWidth(25);
-                                if (ImGui::Checkbox(std::format("##pin{}", var_idx).c_str( ), reinterpret_cast<bool*>(&var_pin[var_idx / 2]))) {
-                                    std::cout << std::dec << var_idx / 2 << ":checked / " << (int)var_pin[var_idx / 2] << "\n";
-                                }
-                                var_idx += 2;
+                                var_idx++;
                             }
-                            ImGui::EndTable( );
                         }
-                        ImGui::TreePop( );
                     }
-                    else var_idx += (2 * func_var.second.size( ));
-                    var_table_idx++;
+                    ImGui::EndTable( );
                 }
                 ImGui::EndChild( );
                 ImGui::PopStyleVar( );
                 ImGui::EndTabItem( );
-                */
             }
         }
         ImGui::EndTabBar( );
         ImGui::End( );
         
     }
-    ImGui::PopFont( ); // Revert to previous font
 
     //  end_signature( );
     // End the window

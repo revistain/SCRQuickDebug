@@ -38,25 +38,27 @@ Locations::Locations(uint32_t _mrgn_addr, std::vector<std::string> _location_lab
     }
 }
 
-void Locations::drawLocations(const std::unique_ptr<Variables>& var_ptr, GameData& game_data) {
+void Locations::drawLocations(const std::unique_ptr<Variables>& var_ptr, GameData& game_data, bool* isLocationVisible) {
     screen_left = var_ptr->screenTL[1];
     screen_top  = var_ptr->screenTL[0];
     screen_size_x = game_data.screen_size_x;
     screen_size_y = game_data.screen_size_y;
     screen_center_x = game_data.screen_size_x / 2 + screen_left;
     screen_center_y = game_data.screen_size_y / 2 + screen_top;
-    bool flag = false;
-    for (auto& loc : locations) {
-        
-        if (loc.right >= screen_left ||
-            loc.left < screen_left + screen_size_x ||
-            loc.down >= screen_top ||
-            loc.top < screen_top + screen_size_y) {
-            int draw_x = loc.left - screen_left;
-            int draw_y = loc.top - screen_top;
-            uint32_t draw_size_x = abs(static_cast<int>(loc.left - loc.right));
-            uint32_t draw_size_y = abs(static_cast<int>(loc.top - loc.down));
-            DrawSquareWithLabel(game_data.pillar_size, draw_x, draw_y, draw_size_x, draw_size_y, loc.label.c_str( ), loc.index);
+
+    for (size_t idx = 0; idx < 255; idx++) {
+        if (!var_ptr->LocationsUse[idx] || !isLocationVisible[idx]) {
+            continue;
+        }
+        if (locations[idx].right >= screen_left ||
+            locations[idx].left < screen_left + screen_size_x ||
+            locations[idx].down >= screen_top ||
+            locations[idx].top < screen_top + screen_size_y) {
+            int draw_x = locations[idx].left - screen_left;
+            int draw_y = locations[idx].top - screen_top;
+            uint32_t draw_size_x = abs(static_cast<int>(locations[idx].left - locations[idx].right));
+            uint32_t draw_size_y = abs(static_cast<int>(locations[idx].top - locations[idx].down));
+            DrawSquareWithLabel(game_data.pillar_size, draw_x, draw_y, draw_size_x, draw_size_y, locations[idx].label.c_str( ), locations[idx].index);
         }
     }
 }

@@ -44,7 +44,8 @@ public:
     std::vector<EUDVariable> eudgvars;
     std::vector<EUDVariable> eudarrs;
     std::vector<EUDVariable> eudgarrs;
-	std::vector<std::string> Locations;
+    std::vector<std::string> Locations;
+    std::vector<bool> LocationsUse;
     std::unordered_map<std::string, std::vector<std::pair<std::string, std::vector<std::reference_wrapper<EUDVariable>>>>> file_map; // damn...
     std::unordered_map < std::string, std::vector<std::reference_wrapper<EUDVariable>>> func_map;
     uint32_t screenTL[2];

@@ -23,6 +23,8 @@ class Locations {
 public:
     uint32_t mrgn_addr;
     std::vector<Location> locations;
+    std::vector<bool> LocationsUse;
+    bool visible[255];
     std::vector<std::string> location_labels;
     uint32_t screen_center_x, screen_center_y;
     uint32_t screen_size_x, screen_size_y;
@@ -30,7 +32,7 @@ public:
     uint32_t screen_top, screen_left;
 
     Locations(uint32_t _mrgn_addr, std::vector<std::string> _location_labels);
-    void drawLocations(const std::unique_ptr<Variables>& var_ptr, GameData& game_data);
+    void drawLocations(const std::unique_ptr<Variables>& var_ptr, GameData& game_data, bool* isLocationVisible);
     void updateData( );
 };
 
