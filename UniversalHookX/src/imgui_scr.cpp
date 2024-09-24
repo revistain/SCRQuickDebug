@@ -230,7 +230,7 @@ void StarCraft_UI( ) {
 
                                             // current value
                                             ImGui::TableNextColumn();
-                                            inputable_form(isHex, obj, var_idx, writeEUDVariable);
+                                            inputable_form(isHex, 0, obj, var_idx, writeEUDVariable);
 
                                             // pinned
                                             ImGui::TableNextColumn();
@@ -254,7 +254,7 @@ void StarCraft_UI( ) {
                                                     ImGui::TreeNodeEx(std::format("{}##{}", arr_idx, obj.get( ).var_name.c_str( )).c_str( ), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
                                                     ImGui::TableNextColumn( );
                                                     ImGui::TableNextColumn( );
-                                                    ImGui::Text("%08X", obj.get( ).additional_value[arr_idx]);
+                                                    inputable_form(isHex, arr_idx, obj, var_idx, writeEUDArray);
                                                 }
                                                 ImGui::TreePop( );
                                             }
@@ -267,13 +267,13 @@ void StarCraft_UI( ) {
                                             ImGui::TableNextColumn( );
                                             ImGui::Text("size: %d", obj.get( ).value);
                                             if (opened) {
-                                                for (size_t arr_idx = 0; arr_idx < obj.get( ).value; arr_idx++) {
+                                                for (size_t parr_idx = 0; parr_idx < obj.get( ).value; parr_idx++) {
                                                     ImGui::TableNextRow( );
                                                     ImGui::TableSetColumnIndex(1);
-                                                    ImGui::TreeNodeEx(std::format("{}##{}", arr_idx, obj.get( ).var_name.c_str( )).c_str( ), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+                                                    ImGui::TreeNodeEx(std::format("{}##{}", parr_idx, obj.get( ).var_name.c_str( )).c_str( ), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen);
                                                     ImGui::TableNextColumn( );
                                                     ImGui::TableNextColumn( );
-                                                    ImGui::Text("%08X", obj.get( ).additional_value[arr_idx]);
+                                                    inputable_form(isHex, parr_idx, obj, var_idx, writeEUDVArray);
                                                 }
                                                 ImGui::TreePop( );
                                             }

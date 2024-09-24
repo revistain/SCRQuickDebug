@@ -1,16 +1,21 @@
 #ifndef IMGUI_THINGS_H
 #define IMGUI_THINGS_H
-#include "variable.h"
-#include "memoryRW.h"
-#include <functional>
-#include <format>
 #include "../dependencies/imgui/imgui.h"
 #include "../dependencies/imgui/imgui_impl_win32.h"
 #include "../dependencies/imgui/imgui_internal.h"
 
-void writeEUDVariable(std::reference_wrapper<EUDVariable>& obj, uint32_t offset, uint32_t value);
+#include "variable.h"
+#include "signature.h"
+#include "memoryRW.h"
+#include <functional>
+#include <format>
 
-void inputable_form(bool isHex, std::reference_wrapper<EUDVariable>& obj, int var_idx, void (*func)(std::reference_wrapper<EUDVariable>&, uint32_t, uint32_t));
+
+void writeEUDVariable(std::reference_wrapper<EUDVariable>& obj, uint32_t param, uint32_t value);
+void writeEUDArray(std::reference_wrapper<EUDVariable>& obj, uint32_t param, uint32_t value);
+void writeEUDVArray(std::reference_wrapper<EUDVariable>& obj, uint32_t param, uint32_t value);
+
+void inputable_form(bool isHex, uint32_t param1, std::reference_wrapper<EUDVariable>& obj, int var_idx, void (*func)(std::reference_wrapper<EUDVariable>&, uint32_t, uint32_t));
 inline void ToggleButton(const char* str_id, bool* v) {
     ImVec4* colors = ImGui::GetStyle( ).Colors;
     ImVec2 p = ImGui::GetCursorScreenPos( );

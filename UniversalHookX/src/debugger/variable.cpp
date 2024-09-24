@@ -1,6 +1,12 @@
 #include "variable.h"
 #include "eud.h"
 
+EUDVariable::~EUDVariable( ) {
+    std::cout << "destructed!!" << std::endl;
+    for (auto& pchr : display_buf) {
+        delete[] pchr;
+    }
+}
         
 EUDVariable::EUDVariable(StringTable& string, uint32_t _file_index, uint32_t _func_index,
     uint32_t _var_index, uint32_t _addr) : address(_addr), value(0), prev_value(0), cgfw_type("") {
@@ -8,7 +14,9 @@ EUDVariable::EUDVariable(StringTable& string, uint32_t _file_index, uint32_t _fu
     if (_func_index == -1) { func_name = ""; }
     else { func_name = string.str[_func_index]; }
     var_name  = string.str[_var_index];
-    display_buf.resize(1);
+    display_buf.push_back(new char[20]);
+    memset(display_buf.back( ), 1, sizeof(19));
+    memset(display_buf.back( ) + 19, 0, sizeof(1));
     pinned = false;
     std::cout << "var: " << file_name << "@" << func_name << "@@" << var_name << "\n";
 }
@@ -20,7 +28,11 @@ EUDVariable::EUDVariable(StringTable& string, uint32_t _file_index, uint32_t _fu
     if (_func_index == -1) { func_name = ""; }
     else { func_name = string.str[_func_index]; }
     var_name = string.str[_var_index];
-    display_buf.resize(_size);
+    for (size_t i = 0; i < _size; i++) {
+        display_buf.push_back(new char[20]);
+        memset(display_buf.back( ), 1, sizeof(19));
+        memset(display_buf.back( ) + 19, 0, sizeof(1));
+    }
     pinned = false;
 }
 
@@ -82,8 +94,8 @@ Variables::Variables(
         std::cout << "base_addr + addr: " << base_addr + addr << "\n";
         std::cout << "size: " << size << "\n";
         eudgarrs.emplace_back(strtable, file_idx, -1, var_idx, addr, size);
-        eudgarrs[eudgarrs.size( ) - 1].cgfw_type = strtable.str[func_idx];
-        eudgarrs[eudgarrs.size( ) - 1].additional_value.resize(size);
+        eudgarrs.back().cgfw_type = strtable.str[func_idx];
+        eudgarrs.back().additional_value.resize(size);
     }
 
 	Locations.resize(255);
@@ -258,7 +270,6 @@ void Variables::update_value() {
         if (arr.cgfw_type == "PVariable") {
             uint32_t addr = arr.address;
             for (size_t i = 0; i < arr.value; i++) {
-                std::cout << "asdfasdfa 0x" << bass_addr + addr + 348 << "\n";
                 arr.additional_value[i] = dwread(bass_addr + addr + i * 72 + 348);
             }
         }
