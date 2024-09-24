@@ -1,11 +1,4 @@
 from eudplib import *
-import eudplib.core.variable.eudv as ev
-import eudplib.core.eudfunc.eudfuncn as ef
-import eudplib.collections.eudarray as ea
-import eudplib.epscript.helper as hp
-import struct
-import inspect
-import os
 eudplib_type = 0
 def compare_versions(version1, version2):
     print(version1)
@@ -13,11 +6,18 @@ def compare_versions(version1, version2):
     v1_parts = list(map(int, version1.split('.')[:2]))
     v2_parts = list(map(int, version2.split('.')[:2]))
     return v1_parts > v2_parts
-
 if compare_versions(eudplibVersion(), "0.77.9"):
     eudplib_type = 1
-else:
-    ep_assert("euddraft 0.1.0.0 이상 버전을 사용하여 주세요 !!")
+
+ep_assert(eudplib_type != 0, "euddraft 0.1.0.0 이상 버전을 사용하여 주세요 !!")
+    
+import eudplib.core.variable.eudv as ev
+import eudplib.core.eudfunc.eudfuncn as ef
+import eudplib.collections.eudarray as ea
+import eudplib.epscript.helper as hp
+import struct
+import inspect
+import os
         
 isEUDFunc = False
 collected_vars = []
@@ -38,6 +38,10 @@ def _patched_init(self, *args, **kwargs):
         if fname:
             if fname == "_TYLV":
                 print("_TYLV: ", prev_frame.f_back.f_code.co_name)
+                collected_vars.append(self)
+                frames[self] = prev_frame.f_back
+            elif fname == "_TYSV":
+                print("_TYSV: ", prev_frame.f_back.f_code.co_name)
                 collected_vars.append(self)
                 frames[self] = prev_frame.f_back
             else:
@@ -80,9 +84,6 @@ def _patched_cgfw(self, *args, **kwargs):
     return rets
 hp._CGFW = _patched_cgfw
 
-# (Line 4) const someEUDArray = EUDArray(10);
-# someEUDArray = _CGFW(lambda: [EUDArray(10)], 1)[0]
-# so we prop dont need this
 original_array_init = ea.EUDArray.__init__
 def _patched_array_init(self, *args, **kwargs):
     if eudplib_type == 0:
@@ -170,7 +171,9 @@ def find_cgfw_names(garr):
                     elif type_name == "EUDVArray" or type_name == "PVariable":
                         garrays.append([file_name, type_name, name, garr, garr._size])
                     elif type_name == "StringBuffer":
-                        garrays.append([file_name, type_name, name, garr, garr.capacity])
+                        garrays.append([file_name, type_name, name, garr.epd, garr.capacity])
+                    elif type_name == "Db":
+                        garrays.append([file_name, type_name, name, garr, garr.GetDataSize()])
                     elif type_name == "EUDObject":
                         garrays.append([file_name, type_name, name, garr, garr.GetDataSize()])
                     elif type_name == "ConstExpr": # EPD has smashed the object, so cannot know the lengthh
