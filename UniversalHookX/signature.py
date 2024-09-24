@@ -16,9 +16,9 @@ def compare_versions(version1, version2):
 
 if compare_versions(eudplibVersion(), "0.77.9"):
     eudplib_type = 1
+else:
+    ep_assert("euddraft 0.1.0.0 이상 버전을 사용하여 주세요 !!")
         
-
-
 isEUDFunc = False
 collected_vars = []
 collected_arrays = []
@@ -31,28 +31,20 @@ global_frames_array = {}
 original_init = ev.EUDVariable.__init__
 def _patched_init(self, *args, **kwargs):
     if eudplib_type == 0:
-        prev_frame = inspect.currentframe().f_back
-        if isEUDFunc == True or prev_frame.f_back.f_code.co_name in ("onPluginStart", "beforeTriggerExec", "afterTriggerExec"):
-            fname = prev_frame.f_code.co_name
-            if fname and (fname == "_LVAR" or not fname.startswith("_")):
-                collected_vars.append(self)
-            frames[self] = prev_frame
-        original_init(self, *args, **kwargs)
+        ... # no
     elif eudplib_type == 1:
-        prev_frame = inspect.currentframe().f_back.f_back
-        if isEUDFunc == True:
-            fname = prev_frame.f_code.co_name
-            if fname:
-                if fname == "EUDCreateVariables":
-                    if(prev_frame.f_back.f_back.f_back.f_code.co_name == "_footer"):
-                        collected_vars.append(self)
-                        frames[self] = prev_frame.f_back.f_back.f_back.f_back.f_back
-                    else:
-                        collected_vars.append(self)
-                        frames[self] = prev_frame.f_back.f_back.f_back
-                else:
-                    collected_vars.append(self)
-                    frames[self] = prev_frame
+        prev_frame = inspect.currentframe().f_back
+        fname = prev_frame.f_code.co_name
+        if fname:
+            if fname == "_TYLV":
+                print("_TYLV: ", prev_frame.f_back.f_code.co_name)
+                collected_vars.append(self)
+                frames[self] = prev_frame.f_back
+            else:
+                # print("EUDVar: ", prev_frame.f_code.co_name)
+                collected_vars.append(self)
+                frames[self] = prev_frame                
+
         original_init(self, *args, **kwargs)
 ev.EUDVariable.__init__ = _patched_init
 
@@ -65,9 +57,11 @@ def _patched_tygv(self, *args, **kwargs):
         if isinstance(var_list, list):
             for var in var_list:
                 collected_gvars.append(var)
+                print("_TYGL: ", var)
                 prev_frame = inspect.currentframe().f_back
                 global_frames[var] = prev_frame
         else:
+            print("_TYGL: ", var_list)
             collected_gvars.append(var_list)
             global_frames[var_list] = inspect.currentframe().f_back
         return var_list
@@ -76,15 +70,19 @@ hp._TYGV = _patched_tygv
 original_cgfw = hp._CGFW # const global forward?
 def _patched_cgfw(self, *args, **kwargs):
     if eudplib_type == 0:
-        ... # for now, no
+        ... # no
     elif eudplib_type == 1:
         rets = original_cgfw(self, *args, **kwargs)
-        prev_frame = inspect.currentframe().f_back
-        collected_garray.append(rets[0])
-        global_frames_array[rets[0]] = prev_frame
+        if not isinstance(rets[0], int):
+            prev_frame = inspect.currentframe().f_back
+            collected_garray.append(rets[0])
+            global_frames_array[rets[0]] = prev_frame
     return rets
 hp._CGFW = _patched_cgfw
-    
+
+# (Line 4) const someEUDArray = EUDArray(10);
+# someEUDArray = _CGFW(lambda: [EUDArray(10)], 1)[0]
+# so we prop dont need this
 original_array_init = ea.EUDArray.__init__
 def _patched_array_init(self, *args, **kwargs):
     if eudplib_type == 0:
@@ -112,8 +110,10 @@ def find_var_names(var):
                     file_path = inspect.getfile(frames[var])
                     file_name = os.path.basename(file_path)
                     # var_data(path, func_str_idx, var_str_idx, addr)
-                    print("var: ", name)
-                    vars.append([file_name, frames[var].f_code.co_name, name, var])
+                    if frames[var].f_code.co_name == "<module>":
+                        vars.append([file_name, "", name, var])
+                    else:
+                        vars.append([file_name, frames[var].f_code.co_name, name, var])
         except KeyError:
             ...
 
@@ -146,7 +146,7 @@ def find_array_names(arr):
                     file_path = inspect.getfile(frames_array[arr])
                     file_name = os.path.basename(file_path)
                     # var_data(path, func_str_idx, var_str_idx, addr, size)
-                    print("arr: ", name)
+                    print("arr: ", name, arr)
                     arrays.append([file_name, frames_array[arr].f_code.co_name, name, arr, arr.length])
         except KeyError:
             ...
@@ -165,17 +165,15 @@ def find_cgfw_names(garr):
                     file_name = os.path.basename(file_path)
                     # var_data(path, type_str, var_str_idx, addr, size)
                     type_name = type(garr).__name__
-                    if type_name == "EUDVArray" or type_name == "PVariable":
-                        continue
+                    if type_name == "EUDArray":
+                        garrays.append([file_name, type_name, name, garr, garr.length])
+                    elif type_name == "EUDVArray" or type_name == "PVariable":
                         garrays.append([file_name, type_name, name, garr, garr._size])
                     elif type_name == "StringBuffer":
-                        continue
                         garrays.append([file_name, type_name, name, garr, garr.capacity])
                     elif type_name == "EUDObject":
-                        continue
                         garrays.append([file_name, type_name, name, garr, garr.GetDataSize()])
                     elif type_name == "ConstExpr": # EPD has smashed the object, so cannot know the lengthh
-                        continue
                         garrays.append([file_name, type_name, name, garr, 0])
         except KeyError:
             ...
@@ -359,7 +357,6 @@ def process_garrs():
 
 import eudplib.core.mapdata.stringmap as sm
 def process_mrgn():
-    # print()
     locmap = sm.locmap._s2id # {locname: locidx}
     mrgn_idx = 0
     for k, v in locmap.items():
@@ -386,8 +383,6 @@ def save_data():
     process_arrs()
     process_garrs()
     process_mrgn()
-    for i, e in enumerate(strs):
-        print(i, e)
 
     # restore header
     act = []
@@ -443,7 +438,7 @@ def save_data():
         _funcArrDataBinaray += struct.pack("<I", var[2])
         _funcArrDataBinaray += b'\0\0\0\0'
         _funcArrDataBinaray += struct.pack("<I", var[4])
-        act.append(SetMemoryEPD(EPD(arrDataDb)+2+3+5*i, SetTo, var[3].Evaluate()))
+        act.append(SetMemoryEPD(EPD(arrDataDb)+2+3+5*i, SetTo, var[3]))
     funcArrDataBinaray = b'ARRT' + struct.pack("<I", len(_funcArrDataBinaray))
     funcArrDataBinaray += _funcArrDataBinaray
     arrDataDb << Db(funcArrDataBinaray)
