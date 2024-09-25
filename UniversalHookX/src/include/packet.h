@@ -16,5 +16,7 @@ typedef struct {
 	uint32_t mask	: 32;
 }Packet;
 
-void process_packets();
+void addPacket(uint16_t opcode, uint16_t pNumber, uint32_t param1, uint32_t param2, uint32_t param3, uint32_t mask);
+void process_packets( );
+bool send_packets( );
 #endif

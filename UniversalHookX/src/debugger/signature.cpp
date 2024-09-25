@@ -18,6 +18,8 @@ uint32_t arr_adress;
 uint32_t garr_adress;
 uint32_t mrgn_address;
 uint32_t screen_data_address;
+std::string qdebug_version;
+std::string dll_version = "0001";
 
 uint32_t exeAddr = 0;
 uint32_t unittableAddr = 0;
@@ -204,7 +206,7 @@ uint32_t find_signature_address() {
     }
 
     try {
-        std::string signature_str("GongjknOSDIfnwlnlSNDKlnfkopqfnkLDNSF");
+        std::string signature_str("GongjknOSDIfnwlnlSNDKlnfkopqYwZL");
         std::vector<uint8_t> signature = StringToByteVector(signature_str);
         LOG("Seaching start\n");
         searchMemory(hProcess, signature, 10);
@@ -221,6 +223,11 @@ void init_signature() {
         signature_address = find_signature_address();
         LOG("found addr: 0x%08X\n", signature_address);
         if (signature_address != 0) {
+            uint32_t signature_version = dwread(signature_address + 32);
+            qdebug_version.assign(reinterpret_cast<char*>(&signature_version), 4);
+            if (qdebug_version != dll_version) {
+                throw std::string("qdebug Version mismatch!\n( dll_ver: " + dll_version + " / qdebug_ver: " + qdebug_version + " )");
+            }
             base_address = signature_address - unEPD(dwread(signature_address + 40));
             packet_address = base_address + unEPD(dwread(signature_address + 44));
             string_address = base_address + dwread(signature_address + 48);
@@ -231,10 +238,10 @@ void init_signature() {
             mrgn_address = base_address + dwread(signature_address + 68);
             screen_data_address = base_address + unEPD(dwread(signature_address + 72));
         }
-        else { std::cerr << "cannot find signature address\n"; }
+        else { std::cout << "cannot find signature address\n"; }
     }
     catch (const std::string& str) {
-        throw std::string("Error finding signature\n") + str;
+        throw str;
     }
 }
 
