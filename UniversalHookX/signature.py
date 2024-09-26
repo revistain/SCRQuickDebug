@@ -1,8 +1,8 @@
 from eudplib import *
 eudplib_type = 0
 def compare_versions(version1, version2):
-    print(version1)
-    print(version2)
+    # print(version1)
+    # print(version2)
     v1_parts = list(map(int, version1.split('.')[:2]))
     v2_parts = list(map(int, version2.split('.')[:2]))
     return v1_parts > v2_parts
@@ -37,11 +37,11 @@ def _patched_init(self, *args, **kwargs):
         fname = prev_frame.f_code.co_name
         if fname:
             if fname == "_TYLV":
-                print("_TYLV: ", prev_frame.f_back.f_code.co_name)
+                # print("_TYLV: ", prev_frame.f_back.f_code.co_name)
                 collected_vars.append(self)
                 frames[self] = prev_frame.f_back
             elif fname == "_TYSV":
-                print("_TYSV: ", prev_frame.f_back.f_code.co_name)
+                # print("_TYSV: ", prev_frame.f_back.f_code.co_name)
                 collected_vars.append(self)
                 frames[self] = prev_frame.f_back
             else:
@@ -61,11 +61,11 @@ def _patched_tygv(self, *args, **kwargs):
         if isinstance(var_list, list):
             for var in var_list:
                 collected_gvars.append(var)
-                print("_TYGL: ", var)
+                # print("_TYGL: ", var)
                 prev_frame = inspect.currentframe().f_back
                 global_frames[var] = prev_frame
         else:
-            print("_TYGL: ", var_list)
+            # print("_TYGL: ", var_list)
             collected_gvars.append(var_list)
             global_frames[var_list] = inspect.currentframe().f_back
         return var_list
@@ -129,7 +129,7 @@ def find_global_var_names(gvar):
                     file_path = inspect.getfile(global_frames[gvar])
                     file_name = os.path.basename(file_path)
                     # var_data(path, var_str_idx, addr)
-                    print("gvar: ", name)
+                    # print("gvar: ", name)
                     gvars.append([file_name, name, gvar])
         except KeyError:
             ...
@@ -147,7 +147,7 @@ def find_array_names(arr):
                     file_path = inspect.getfile(frames_array[arr])
                     file_name = os.path.basename(file_path)
                     # var_data(path, func_str_idx, var_str_idx, addr, size)
-                    print("arr: ", name, arr)
+                    # print("arr: ", name, arr)
                     arrays.append([file_name, frames_array[arr].f_code.co_name, name, arr, arr.length])
         except KeyError:
             ...
@@ -194,53 +194,7 @@ def registerEUDFunc(self, *args, **kwargs):
         isEUDFunc = False
 ef.EUDFuncN._create_func_body = registerEUDFunc
 
-bufferEPD = EPD(Db(1008))
-signatureEPD = EPD(Db("TEMPjknOSDIfnwlnlSNDKlnfkopqfnkLDNSFEDAC\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1")) # 40bytes
-# sendCount = EUDVariable(0, Add, 1)
-# sendCount.SetDest(sendCount.getDestAddr())
-# currentHeadEPD = EUDXVariable(EPD(0x6509B0), Add, 0, 200)
-# currentTailEPD = EUDXVariable(EPD(0x6509B0), Add, 0, 200)
-# def sendPacket(opCode, param1, param2, param3, mask=0xFFFFFFFF):
-#     currentHeadEPD << f_dwread_epd(bufferEPD+1)
-#     act = []
-#     act.append(SetDeathsX(CurrentPlayer, SetTo, opCode<<24, 0, 0xFF000000))
-#     act.append(SetMemoryEPD(EPD(0x6509B0), Add, 1))
-#     act.append(SetDeaths(CurrentPlayer, SetTo, param1, 0))
-#     act.append(SetMemoryEPD(EPD(0x6509B0), Add, 1))
-    # act.append(SetDeaths(CurrentPlayer, SetTo, param2, 0))
-    # act.append(SetMemoryEPD(EPD(0x6509B0), Add, 1))
-    # act.append(SetDeaths(CurrentPlayer, SetTo, param3, 0))
-    # act.append(SetMemoryEPD(EPD(0x6509B0), Add, 1))
-    # act.append(SetDeaths(CurrentPlayer, SetTo, mask, 0))
-    # act.append(SetMemoryEPD(EPD(0x6509B0), SetTo, 0))
-    # VProc([currentTailEPD],
-    #       [SetMemoryEPD(EPD(0x6509B0), SetTo, bufferEPD+3),
-    #        currentTailEPD.AddNumber(5)])
-    # VProc([sendCount], [act])
-    # f_dwwrite_epd(bufferEPD+2, currentTailEPD)
-
-# sendCount = EUDVariable(1)
-# currentHeadEPD = EUDXVariable(0, SetTo, 0, 1000)
-# currentTailEPD = EUDXVariable(0, SetTo, 0, 1000)
-# def sendPacket(opCode, param1, param2, param3, mask=0xFFFFFFFF):
-#     baseOffset = EUDVariable()
-#     baseOffset << (currentHeadEPD + bufferEPD + 3)
-#     DoActions([
-#         SetMemoryXEPD(bufferEPD, SetTo, 1, 0xFFFF),
-#         SetMemoryXEPD(baseOffset, SetTo, opCode, 0xFF000000),
-#         SetMemoryXEPD(baseOffset, SetTo, sendCount, 0xFFFFFF),
-#         SetMemoryEPD(baseOffset+1, SetTo, param1),
-#         SetMemoryEPD(baseOffset+2, SetTo, param2),
-#         SetMemoryEPD(baseOffset+3, SetTo, param3),
-#         SetMemoryEPD(baseOffset+4, SetTo, mask),
-#         currentTailEPD.AddNumber(5),
-#         sendCount.AddNumber(1),
-#     ])
-#     DoActions([
-#         SetMemoryXEPD(bufferEPD, SetTo, 0, 0xFFFF),
-#         # SetMemoryEPD(bufferEPD+1, SetTo, currentHeadEPD),
-#         SetMemoryEPD(bufferEPD+2, SetTo, currentTailEPD),
-#     ])
+signatureEPD = EPD(Db("TEMPjknOSDIfnwlnlSNDKlnfkopqYwZL0002EDAC\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1")) # 40bytes
 
 ##### custom defined sections
 ##  string
@@ -269,7 +223,7 @@ signatureEPD = EPD(Db("TEMPjknOSDIfnwlnlSNDKlnfkopqfnkLDNSFEDAC\1\1\1\1\1\1\1\1\
 ### 16b*vars: garr_data(path, type_str, var_str_idx, addr, size)
 
 ### location table
-##  4b      : MRND
+##  4b      : MRNT
 ##  4b      : size of locations
 ##  8b*locs : loc_data(loc name, loc number)
 #####
@@ -280,12 +234,14 @@ gvar_data      = []
 arr_data       = []
 garr_data      = []
 mrgn_data      = []
+bufferEPD = Db(0) #EPD(Db(2016)) # 1012, 1004 for send, receive
 stringDb   = Forward()
 varDataDb  = Forward()
 gvarDataDb = Forward()
 arrDataDb  = Forward()
 garrDataDb = Forward()
 MRGNDataDb = Forward()
+SPRPDataDb = Forward()
 def process_vars():
     # var_data(path, func_str_idx, var_str_idx, addr)
     for e in vars:
@@ -355,7 +311,7 @@ def process_garrs():
             type_idx = strs.index(e[1])
             
         strs.append(e[2])
-        print("CGFW: ", [path_idx, type_idx, len(strs)-1, e[3], e[4]])
+        # print("CGFW: ", [path_idx, type_idx, len(strs)-1, e[3], e[4]])
         garr_data.append([path_idx, type_idx, len(strs)-1, e[3], e[4]])
 
 import eudplib.core.mapdata.stringmap as sm
@@ -372,6 +328,33 @@ def process_mrgn():
         mrgn_data.append([mrgn_idx, v])
     return mrgn_data
 
+WireFrameDb = Forward()# Db(8) #12b: isSingle(bool), map_title_offset, map_title_idx
+def process_wf_colors():
+    chkt = GetChkTokenized()
+    tileset_index = b2i2(chkt.getsection("ERA ")) & 7
+    dimensions_are_256_256 = list(chkt.getsection("DIM ")) == [0, 1, 0, 1]
+    lobby_tile_offset = 123 + (0 if tileset_index == 0 else 1) + (0 if dimensions_are_256_256 else 2) - 2
+    
+    SPRP = bytearray(chkt.getsection("SPRP"))
+    map_index = b2i2(SPRP[0:2])
+    map_title = sm.get_string_map().GetString(map_index)
+    strs.append(map_title.decode('utf-8'))
+    map_title_idx = len(strs) - 1
+    
+    isSingle = f_strlen(0x6D0F78)
+    _wfDataBinaray = b'\0\0\0\0'
+    _wfDataBinaray += struct.pack("<I", lobby_tile_offset)
+    _wfDataBinaray += struct.pack("<I", map_title_idx)
+    f_dwwrite_epd(EPD(WireFrameDb)+2, isSingle)
+    
+    wfDataBinaray = b'WFST' + struct.pack("<I", len(_wfDataBinaray))
+    wfDataBinaray += _wfDataBinaray
+    WireFrameDb << Db(wfDataBinaray)
+    print("map_title: ", map_title)
+    print("offset, idx: ", lobby_tile_offset, map_title_idx)
+    f_simpleprint("isSingle: ", isSingle)
+    
+
 screenDbEPD = EPD(Db(8)) # screen top, left(0 ~ 0x1FFF) 4byte each
 mapPathDbEPD = EPD(Db(260))
 pathSignatureEPD = EPD(Db("TEMPNkdfhLpZmqWnRbZlfhInbpQYtZBwjeOqmPlW"))
@@ -386,12 +369,17 @@ def save_data():
     process_arrs()
     process_garrs()
     process_mrgn()
-
+    process_wf_colors()
+    
     # restore header
     act = []
     header = struct.unpack("<I", b"Gong")[0]
     act.append(SetMemoryEPD(signatureEPD, SetTo, header))
-    # string table
+    
+    ### string
+    ##  4b      : STRS
+    ##  4b      : size of strings
+    ### strs    : func strings
     _stringBinaray = b''
     for str in strs:
         _stringBinaray += str.encode('utf-8')+ b'\x00'
@@ -502,107 +490,138 @@ def init_signature():
         SetMemoryEPD(signatureEPD+16, SetTo, garrDataDb),
         SetMemoryEPD(signatureEPD+17, SetTo, MRGNDataDb),
         SetMemoryEPD(signatureEPD+18, SetTo, screenDbEPD),
+        SetMemoryEPD(signatureEPD+19, SetTo, WireFrameDb),
     ])
 
-## packet
-# opcode    2byte
-# pNumber   2bytes
-# param1    4byte
-# param2    4byte
-# param3    4byte
-# mask      4byte
+# ## packet
+# # opcode    2byte
+# # pNumber   2bytes
+# # param1    4byte
+# # param2    4byte
+# # param3    4byte
+# # mask      4byte
 
-## packet header
-# bufferEPD
-# 20byte * 50 = 1kb
-# whoIsUsing    1byte
-# isConnected   1byte
-# stackedCount  2byte
-# currentHead   4byte
-# currentEnd    4byte
+# ## send packet header
+# # bufferEPD
+# # 20byte * 50 = 1kb
+# # whoIsUsing    1byte
+# # isConnected   1byte
+# # stackedCount  2byte
+# # currentHead   4byte
+# # currentEnd    4byte
 
-sendCount = EUDVariable(0)
-sendHeadEPD = EUDVariable(0)
-sendTailEPD = EUDVariable(0)
-def sendPacket(opCode, param1, param2, param3, mask=0xFFFFFFFF):
-    endTrigger = Forward()
-    EUDJumpIfNot([MemoryXEPD(bufferEPD, Exactly, 0, 0xFF)], endTrigger) # program using / not connected // , MemoryXEPD(bufferEPD, AtLeast, 1<<8, 0xFF00)]
+# sendCount = EUDVariable(0)
+# sendHeadEPD = EUDVariable(0)
+# sendTailEPD = EUDVariable(0)
+# def sendPacket(opCode, param1, param2, param3, mask=0xFFFFFFFF):
+#     endTrigger = Forward()
+#     EUDJumpIfNot([MemoryXEPD(bufferEPD, Exactly, 0, 0xFF)], endTrigger) # program using / not connected // , MemoryXEPD(bufferEPD, AtLeast, 1<<8, 0xFF00)]
     
-    baseEPD = (bufferEPD+sendTailEPD+3)
-    DoActions([
-        SetMemoryXEPD(bufferEPD, SetTo, 1, 0xFF),
-        SetMemoryXEPD(bufferEPD, Add, 1 << 16, 0xFFFF0000),
-        SetMemoryXEPD(baseEPD, SetTo, opCode, 0xFFFF),
-        SetMemoryEPD(baseEPD+1, SetTo, param1),
-        SetMemoryEPD(baseEPD+2, SetTo, param2),
-        SetMemoryEPD(baseEPD+3, SetTo, param3),
-        SetMemoryEPD(baseEPD+4, SetTo, mask),
-        sendCount.AddNumber(1<<16),
-        sendTailEPD.AddNumber(5),
-    ])
+#     baseEPD = (bufferEPD+sendTailEPD+3)
+#     DoActions([
+#         SetMemoryXEPD(bufferEPD, SetTo, 1, 0xFF),
+#         SetMemoryXEPD(bufferEPD, Add, 1 << 16, 0xFFFF0000),
+#         SetMemoryXEPD(baseEPD, SetTo, opCode, 0xFFFF),
+#         SetMemoryEPD(baseEPD+1, SetTo, param1),
+#         SetMemoryEPD(baseEPD+2, SetTo, param2),
+#         SetMemoryEPD(baseEPD+3, SetTo, param3),
+#         SetMemoryEPD(baseEPD+4, SetTo, mask),
+#         sendCount.AddNumber(1<<16),
+#         sendTailEPD.AddNumber(5),
+#     ])
     
-    RawTrigger(
-        conditions=sendTailEPD.AtLeast(250),
-        actions=sendTailEPD.SubtractNumber(250)
-    )
-    f_maskwrite_epd(baseEPD, sendCount, 0xFFFF0000)
-    f_dwwrite_epd(bufferEPD+2, sendTailEPD)
+#     RawTrigger(
+#         conditions=sendTailEPD.AtLeast(250),
+#         actions=sendTailEPD.SubtractNumber(250)
+#     )
+#     f_maskwrite_epd(baseEPD, sendCount, 0xFFFF0000)
+#     f_dwwrite_epd(bufferEPD+2, sendTailEPD)
     
-    DoActions(SetMemoryXEPD(bufferEPD, SetTo, 0, 0xFF))
-    endTrigger << NextTrigger()
+#     DoActions(SetMemoryXEPD(bufferEPD, SetTo, 0, 0xFF))
+#     endTrigger << NextTrigger()
 
+# ## receive packet header
+# # 20byte * 50 = 1kb
+# # whoIsUsing    1byte
+# # isConnected   1byte
+# # stackedCount  2byte
+# # unused        4byte
 
-def receivePacket():
-    ...
+# ## packet
+# # opcode    2byte
+# # pNumber   2bytes
+# # param1    4byte
+# # param2    4byte
+# # param3    4byte
+# # mask      4byte
 
-@EUDFunc
-def debugDoTrigger(param1, param2, param3, param4):
-    act = []
-    EUDSwitch(param1, 0xFF)
-    if EUDSwitchCase()(1): # Create Unit
-        chkt = GetChkTokenized()
-        dim = chkt.getsection("DIM ")
-        mapX = b2i2(dim, 0) << 5
-        mapY = b2i2(dim, 2) << 5
+# send_Db_size = 1012
+# def receivePacket():
+#     global bufferEPD
+#     endTrigger = Forward()
+#     EUDJumpIf([MemoryXEPD(bufferEPD + send_Db_size // 4, Exactly, 0, 0xFFFF)], endTrigger)
+    
+#     read_addr = EUDVariable()
+#     read_addr << bufferEPD
+#     read_addr += (send_Db_size >> 2)
+#     written_size = f_maskread_epd(read_addr, 0xFFFF0000) >> 16
+#     written_size_epd = written_size >> 2
+#     opCode  = f_maskread_epd(read_addr + written_size_epd + 1, 0xFFFF0000) >> 16
+#     pNumber = f_maskread_epd(read_addr + written_size_epd + 1, 0xFFFF)
+#     param1  = f_dwread_epd(read_addr + written_size_epd + 2)
+#     param2  = f_dwread_epd(read_addr + written_size_epd + 3)
+#     param3  = f_dwread_epd(read_addr + written_size_epd + 4)
+#     mask    = f_dwread_epd(read_addr + written_size_epd + 5)
+    
+#     DoActions(SetMemoryXEPD(read_addr, Subtract, 20, 0xFFFF))
+#     debugDoTrigger(opCode, pNumber, param1, param2, param3, mask)
+#     endTrigger << NextTrigger()
+
+# @EUDFunc
+# def debugDoTrigger(opCode, pNumber, param1, param2, param3, param4):
+#     f_simpleprint(hptr(opCode), hptr(pNumber), hptr(param1), hptr(param2), hptr(param3), hptr(param4))
+#     act = []
+#     EUDSwitch(opCode, 0xFF)
+#     if EUDSwitchCase()(1): # Create Unit
+#         chkt = GetChkTokenized()
+#         dim = chkt.getsection("DIM ")
+#         mapX = b2i2(dim, 0) << 5
+#         mapY = b2i2(dim, 2) << 5
+#         f_simpleprint("mapX", mapX, " mapY", mapY)
         
-        # param1: AA param2: location YYXX, param3: unit_number, param4: target_player
-        f_setloc_epd(EncodeLocation("Anywhere"), EPD(param2.getValueAddr))
-        DoActions(CreateUnit(1, param3, EncodeLocation("Anywhere"), param4))
-        f_setloc(EncodeLocation("Anywhere"), 0, 0, mapX*32, mapY*32)
+#         # param1: location YYXX, param2: unit_number, param3: target_player
+#         f_setloc_epd(EncodeLocation("Anywhere"), EPD(param1.getValueAddr()))
+#         DoActions(CreateUnit(1, param2, EncodeLocation("Anywhere"), param3))
+#         f_setloc(EncodeLocation("Anywhere"), 0, 0, mapX*32, mapY*32)
         
-        EUDBreak()
-    if EUDSwitchCase()(10): # Get Clicked Unit
-        ...
-        EUDBreak()
-    if EUDSwitchCase()(11): # Remove Clicked Unit
-        ...
-        EUDBreak()
-    if EUDSwitchCase()(12): # Move Clicked Unit
-        ...
-        EUDBreak()
-    EUDEndSwitch()
+#         EUDBreak()
+#     if EUDSwitchCase()(10): # Get Clicked Unit
+#         ...
+#         EUDBreak()
+#     if EUDSwitchCase()(11): # Remove Clicked Unit
+#         ...
+#         EUDBreak()
+#     if EUDSwitchCase()(12): # Move Clicked Unit
+#         ...
+#         EUDBreak()
+#     EUDEndSwitch()
+
+# def modifiyMapName():
+#     chkt = GetChkTokenized()
+#     SPRP = bytearray(chkt.getsection("SPRP"))
+#     map_name_index = SPRP[0:2]
+#     prev_map_name = sm.strmap.GetString(map_name_index)
+#     signature = GetStringIndex(str("TEMPNkdfhLpZmqWnRbZlfhInbpQYtZ"))
+#     SPRP[0:2] = i2b2(signature)
+#     chkt.setsection("", SPRP)
 
 
-def modifiyMapName():
-    chkt = GetChkTokenized()
-    SPRP = bytearray(chkt.getsection("SPRP"))
-    map_name_index = SPRP[0:2]
-    prev_map_name = sm.strmap.GetString(map_name_index)
-    signature = GetStringIndex(str("TEMPNkdfhLpZmqWnRbZlfhInbpQYtZ"))
-    SPRP[0:2] = i2b2(signature)
-    chkt.setsection("SPRP", SPRP)
 
 def onPluginStart():
-    if compare_versions(eudplibVersion(), "0.77.9"):
-        eudplib_type = 1
-        
     init_signature()
-    # ev.EUDVariable.__lshift__ = _patched_lshift
-    sendPacket(0xAB, 0x00FF00FF, 0xAAAABBBB, 0xBBBBCCCC)
 
 def beforeTriggerExec():
     ...
-    #f_eprintln(epd2s(signatureEPD))
     
 def afterTriggerExec():
     for var in collected_vars:
@@ -614,9 +633,3 @@ def afterTriggerExec():
     for garr in collected_garray:
         find_cgfw_names(garr)
     save_data()
-    
-    # print screen
-    # f_simpleprint(hptr(f_dwread_epd(screenDbEPD)), " ", hptr(f_dwread_epd(screenDbEPD+1)))
-    
-    # print locations
-    # f_simpleprint(hptr(f_dwread(0x58DC60)), " ", hptr(f_dwread(0x58DC64)), " ", hptr(f_dwread(0x58DC68)), " ", hptr(f_dwread(0x58DC6C)), " ")

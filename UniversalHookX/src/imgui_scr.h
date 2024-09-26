@@ -13,4 +13,6 @@
 #include "LocationDraw.h"
 
 void StarCraft_UI( );
+void setExit( );
+bool isExit( );
 #endif

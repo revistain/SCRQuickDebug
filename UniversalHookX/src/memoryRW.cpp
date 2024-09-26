@@ -26,6 +26,13 @@ uint32_t findMRGNAddr() {
     }
 }
 
+uint32_t getElapsedTime(uint32_t mrgn_addr) {
+    if (!mrgn_addr) return 0;
+    uint32_t elapsed_timer_addr = (mrgn_addr & 0xFFFF0000) + 0x154;
+    return Internal::dwread(elapsed_timer_addr);
+
+}
+
 uint32_t findUnitableAddr() {
     std::vector<uint32_t> foundAddresses = Internal::searchAllocationMemory(getProcessHandle( ));
     if (foundAddresses.size( ) == 1)

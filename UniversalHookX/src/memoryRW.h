@@ -8,10 +8,12 @@
 #include <vector>
 #include "pattern.h"
 #include "signature.h"
+#include "LocationDraw.h"
 
 uint32_t getEXEAddr( );
 uint32_t findMRGNAddr();
 uint32_t findUnitableAddr( );
+uint32_t getElapsedTime(uint32_t mrgn_addr);
 
 namespace Internal {
     std::vector<uint8_t> vecread(uint32_t address, size_t size);

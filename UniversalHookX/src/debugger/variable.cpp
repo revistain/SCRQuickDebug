@@ -47,7 +47,7 @@ StringTable::StringTable(std::string& str_data) {
 
 Variables::Variables(
     std::string& str_data, std::string& var_data, std::string& gvar_data,
-    std::string& arr_data, std::string& garr_data, std::string& mrgn_data
+    std::string& arr_data, std::string& garr_data, std::string& mrgn_data, std::string& wf_data
 ) : strtable(str_data) {
     screenTL[0] = 0;
     screenTL[1] = 0;
@@ -105,6 +105,10 @@ Variables::Variables(
         Locations[loc_idx] = strtable.str[loc_str_idx];
         LocationsUse[loc_idx] = true;
 	}
+
+    std::memcpy(&wfdata.isSingle, &wf_data[0], sizeof(uint32_t));
+    std::memcpy(&wfdata.map_title_offset, &wf_data[4], sizeof(uint32_t));
+    std::memcpy(&wfdata.map_title_idx, &wf_data[8], sizeof(uint32_t));
 }
 
 Variables init_variables() {
@@ -160,9 +164,18 @@ Variables init_variables() {
     section_size = dwread(mrgn_addr + 4);
     std::string mrgn_data = strread(mrgn_addr + 8, section_size);
 
+    const uint32_t wf_addr = getWireFrameDataAddr( );
+    section_name = strread(wf_addr, 4);
+    std::cout << "section: " << section_name << std::endl;
+    if (section_name != "WFST") {
+        throw "cannot find WFST";
+    }
+    section_size = dwread(wf_addr + 4);
+    std::string wf_data = strread(wf_addr + 8, 30);
+
 	return Variables::Variables(
         string_data, var_data, gvar_data,
-        arr_data, garr_data, mrgn_data
+        arr_data, garr_data, mrgn_data, wf_data
     );
 }
 

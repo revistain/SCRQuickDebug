@@ -10,6 +10,10 @@
 #include <codecvt>
 #include <locale>
 
+static bool detachFlag = false;
+bool isExit( ) { return detachFlag; }
+void setExit( ) { detachFlag = true; }
+
 // Global variables
 ID3D11Device* g_pd3dDevice = NULL;
 ID3D11DeviceContext* g_pd3dDeviceContext = NULL;
@@ -91,16 +95,36 @@ void sortVariables(std::unique_ptr<Variables>& var_ptr) {
     }
 }
 
+bool writeWFData(std::unique_ptr<Variables>& var_ptr, uint32_t exe_addr) {
+    if (var_ptr->wfdata.isSingle > 0) return false;
+    uint32_t base_addr = exe_addr + 0xDDF0C8;
+    std::string map_string = var_ptr->strtable.str[var_ptr->wfdata.map_title_idx];
+    std::vector<uint8_t> map_vec(map_string.begin( ), map_string.end( ));
+    std::cout << "map: " << map_string << "\n";
+    std::cout << "offset: " << std::dec << var_ptr->wfdata.map_title_offset << "\n";
+    for (size_t i = 0; i < map_vec.size( ); i++) {
+        Internal::bwrite(base_addr + var_ptr->wfdata.map_title_offset + i, map_string[i]);
+    }
+
+    return true;
+}
+
 
 bool starcraft_input = true;
 static bool is_var_popup_open = false;
 GameData updateGameData( ) {
+    // if game ended
+    if (getElapsedTime(loc_ptr->mrgn_addr) == 0) {
+        std::cout << "elapsed timer = 0\n";
+        setExit( );
+    }
+
     // from eudplib
     var_ptr->update_value( );
 
     // from process
-    uint32_t exeAddr = getEXEAddr( );
     GameData gdata;
+    uint32_t exeAddr = getEXEAddr( );
     gdata.screen_size_x  = Internal::dwread(exeAddr + 0xB31AC0);
     gdata.screen_size_y  = Internal::dwread(exeAddr + 0xB31AC8);
     gdata.console_height = Internal::dwread(exeAddr + 0xB31AC4); // unsued
@@ -127,7 +151,8 @@ void onImguiStart() {
                 std::cout << "unittable: 0x" << std::hex << getUnittableAddr( ) << "\n";
             }
         }
-        loc_ptr = std::make_unique<Locations>(findMRGNAddr(), var_ptr->Locations);
+        writeWFData(var_ptr, getEXEAddr( ));
+        loc_ptr = std::make_unique<Locations>(findMRGNAddr( ), var_ptr->Locations);
     } catch (const std::string& str) {
         throw std::string("error on onImguiStart\n") + str;
     }

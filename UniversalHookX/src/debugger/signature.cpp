@@ -18,8 +18,9 @@ uint32_t arr_adress;
 uint32_t garr_adress;
 uint32_t mrgn_address;
 uint32_t screen_data_address;
+uint32_t wireframe_data_address;
 std::string qdebug_version;
-std::string dll_version = "0001";
+std::string dll_version = "0002";
 
 uint32_t exeAddr = 0;
 uint32_t unittableAddr = 0;
@@ -39,7 +40,8 @@ uint32_t getGVarAddr( ) { return gvar_adress; }
 uint32_t getArrAddr( ) { return arr_adress; }
 uint32_t getGArrAddr( ) { return garr_adress; }
 uint32_t getMRGNDataAddr() { return mrgn_address; }
-uint32_t getScreenDataAddr() { return screen_data_address; }
+uint32_t getScreenDataAddr( ) { return screen_data_address; }
+uint32_t getWireFrameDataAddr( ) { return wireframe_data_address; }
 
 std::vector<uint8_t> StringToByteVector(std::string& str) {
     std::vector<uint8_t> ret = std::vector<uint8_t>(str.begin( ), str.end( ));
@@ -225,6 +227,8 @@ void init_signature() {
         if (signature_address != 0) {
             uint32_t signature_version = dwread(signature_address + 32);
             qdebug_version.assign(reinterpret_cast<char*>(&signature_version), 4);
+            std::cout << std::dec << "this version: " << dll_version << "\n";
+            std::cout << std::dec << "sign version: " << qdebug_version << "\n";
             if (qdebug_version != dll_version) {
                 throw std::string("qdebug Version mismatch!\n( dll_ver: " + dll_version + " / qdebug_ver: " + qdebug_version + " )");
             }
@@ -237,6 +241,7 @@ void init_signature() {
             garr_adress = base_address + dwread(signature_address + 64);
             mrgn_address = base_address + dwread(signature_address + 68);
             screen_data_address = base_address + unEPD(dwread(signature_address + 72));
+            wireframe_data_address = base_address + dwread(signature_address + 76);
         }
         else { std::cout << "cannot find signature address\n"; }
     }

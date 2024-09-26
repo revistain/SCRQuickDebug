@@ -36,8 +36,7 @@ namespace ig = ImGui;
 const uint32_t VERSION_MAIN = 0;
 const uint32_t VERSION_MID = 0;
 const uint32_t VERSION_END = 1;
-static bool detachFlag = false;
-bool isExit( ) { return detachFlag; }
+
 namespace Menu {
     void InitializeContext(HWND hwnd) {
         if (ig::GetCurrentContext( ))
@@ -65,7 +64,7 @@ namespace Menu {
             else if (str.contains("Pattern not found")) {
                 SendMessageToQuickDebug(WM_USER + 1, L"");
             }
-            detachFlag = true;
+            setExit( );
             std::wstring wideStr(str.begin( ), str.end( ));
             auto message = std::format(L"Error On QuickDebug\n====================\n{}\n====================\n*debug_dll version: {}.{}.{}",
                                        wideStr, VERSION_MAIN, VERSION_MID, VERSION_END);

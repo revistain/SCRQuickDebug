@@ -37,6 +37,12 @@ public:
     //~EUDVariable( );
 };
 
+typedef struct {
+    uint32_t isSingle;
+    uint32_t map_title_offset;
+    uint32_t map_title_idx;
+}WireFrame;
+
 class Variables {
 public:
 	StringTable strtable;
@@ -49,11 +55,13 @@ public:
     std::unordered_map<std::string, std::vector<std::pair<std::string, std::vector<std::reference_wrapper<EUDVariable>>>>> file_map; // damn...
     std::unordered_map < std::string, std::vector<std::reference_wrapper<EUDVariable>>> func_map;
     uint32_t screenTL[2];
+
+    WireFrame wfdata;
 	
 
 	Variables(
         std::string& str_data, std::string& var_data, std::string& gvar_data,
-        std::string& arr_data, std::string& garr_data, std::string& mrgn_data
+        std::string& arr_data, std::string& garr_data, std::string& mrgn_data, std::string& wf_data
     );
     //~Variables( );
      //Variables(const Variables& vars);
