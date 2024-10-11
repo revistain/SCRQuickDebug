@@ -44,6 +44,8 @@
     <ClCompile Include="src\memoryRW.cpp" />
     <ClCompile Include="src\font.cpp" />
     <ClCompile Include="src\imgui_things.cpp" />
+    <ClCompile Include="src\debugger\cunit.cpp" />
+    <ClCompile Include="src\debugger\unittable.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\console\console.hpp" />
@@ -93,12 +95,13 @@
     <ClInclude Include="src\include\debugger_main.h" />
     <ClInclude Include="src\game_data.h" />
     <ClInclude Include="src\memoryRW.h" />
-    <ClInclude Include="src\unittable.h" />
+    <ClInclude Include="src\include\unittable.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\dllmain.h" />
     <ClInclude Include="src\font.h" />
     <ClInclude Include="src\imgui_things.h" />
     <ClInclude Include="src\imgui_memory_editor.h" />
+    <ClInclude Include="src\include\cunit.h" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="bin\Kostar.ttf" />

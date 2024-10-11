@@ -11,6 +11,7 @@
 #include "drawing.h"
 #include "game_data.h"
 #include "LocationDraw.h"
+#include "cunit.h"
 
 void StarCraft_UI( );
 void setExit( );

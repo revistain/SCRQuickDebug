@@ -1,43 +1,31 @@
 #ifndef UNITTABLE_H
 #define UNITTABLE_H
 #include <cstdint>
+#include <map>
+#include <string>
 
-typedef struct {
-    // Pointer to the previous sprite
+typedef struct CSprite {
     struct CSprite* prev; // 0x00
-    // Pointer to the next sprite
     struct CSprite* next; // 0x04
-    // Sprite data
     uint32_t sprite; // 0x08
-    // Player ID (creator)
     uint32_t playerID; // 0x0A
-    // Index in the selection area (0 <= selectionIndex <= 11)
     uint8_t selectionIndex; // 0x0B
-    // Visibility flags (for fog-of-war)
     uint8_t visibilityFlags; // 0x0C
-    // Elevation level
     uint8_t elevationLevel; // 0x0D
-    // Sprite flags
     uint8_t flags; // 0x0E
-    // Selection timer
     uint8_t selectionTimer; // 0x0F
-    // Index
     uint16_t index; // 0x10
-    // Group dimensions
     uint8_t grpWidth;  // 0x12
     uint8_t grpHeight; // 0x13
-    // Position data
     uint16_t posX;       // 0x14 (same as pos.x)
     uint16_t posY;       // 0x16 (same as pos.y)
-    // Main graphic image
     uint32_t mainGraphic; // 0x18 (officially 'pImagePrimary', CImage)
-    // Head and tail of the image linked list
     uint32_t imageHead; // 0x1C
     uint32_t imageTail; // 0x20
 } CSprite;
 
 
-typedef struct {
+typedef struct CUnit {
     // Pointer to the previous unit
     struct CUnit* prev; // 0x000
     // Pointer to the next unit
@@ -100,7 +88,7 @@ typedef struct {
     uint32_t orderUnitType;   // 0x050
     uint16_t unknown0x52;     // 0x052
     // Cooldown timers
-    uint32_t cooldown;            // 0x054
+    //uint32_t cooldown;            // 0x054
     uint8_t orderTimer;           // 0x054
     uint8_t groundWeaponCooldown; // 0x055
     uint8_t airWeaponCooldown;    // 0x056
@@ -192,9 +180,6 @@ typedef struct {
     uint32_t unknown0xD8;         // 0x0D8
 } CUnit;
 
-
-class UnitTable {
-
-};
-
+extern std::map<std::string, int> CSpriteFields;
+extern std::map<std::string, int> CUnitFields;
 #endif

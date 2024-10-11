@@ -20,6 +20,7 @@ ID3D11DeviceContext* g_pd3dDeviceContext = NULL;
 
 std::unique_ptr<Variables> var_ptr;
 std::unique_ptr<Locations> loc_ptr;
+std::unique_ptr<CUnits>    unit_ptr;
 void sortVariables(std::unique_ptr<Variables>& var_ptr) {
     for (auto& arr : var_ptr->eudgarrs) {
         bool flag = false;
@@ -112,6 +113,7 @@ bool writeWFData(std::unique_ptr<Variables>& var_ptr, uint32_t exe_addr) {
 
 bool starcraft_input = true;
 static bool is_var_popup_open = false;
+static bool is_unit_popup_open = false;
 GameData updateGameData( ) {
     // if game ended
     if (getElapsedTime(loc_ptr->mrgn_addr) == 0) {
@@ -130,6 +132,7 @@ GameData updateGameData( ) {
     gdata.console_height = Internal::dwread(exeAddr + 0xB31AC4); // unsued
     gdata.pillar_size    = Internal::dwread(exeAddr + 0xDE6104);
     loc_ptr->updateData( );
+    unit_ptr->update( );
     return gdata;
 }
 
@@ -150,6 +153,7 @@ void onImguiStart() {
                 setUnittableAddr(findUnitableAddr());
                 std::cout << "unittable: 0x" << std::hex << getUnittableAddr( ) << "\n";
             }
+            unit_ptr = std::make_unique<CUnits>(getUnittableAddr());
         }
         writeWFData(var_ptr, getEXEAddr( ));
         loc_ptr = std::make_unique<Locations>(findMRGNAddr( ), var_ptr->Locations);
@@ -175,7 +179,7 @@ void StarCraft_UI( ) {
 
     ///////////////////////////////////////////////////////////////////////////////
     // Begin the window
-    ImGui::Begin("My Full-Sized Window", nullptr, window_flags);
+    ImGui::Begin("full size window", nullptr, window_flags);
     try {
         //////////////// initialize ////////////////f
         onImguiStart();
@@ -218,6 +222,12 @@ void StarCraft_UI( ) {
                 ImGui::SetWindowFocus("EUDVariable Inspector");
             }
             else is_var_popup_open = true;
+        }
+        else if (ImGui::Button("Open CUnit inspector")) {
+            if (is_unit_popup_open) {
+                ImGui::SetWindowFocus("CUnit Inspector");
+            } else
+                is_unit_popup_open = true;
         }
         
     }
@@ -282,6 +292,7 @@ void StarCraft_UI( ) {
             }
         }
     }
+    // EUDVAR INSPECTOR
     {
         if (is_var_popup_open) {
             ImGui::SetNextWindowSize(ImVec2(545, 600));
@@ -613,6 +624,17 @@ void StarCraft_UI( ) {
                 is_var_popup_open = false;
             ImGui::Separator( );
             ImGui::EndTabBar( );
+            ImGui::End( );
+        }
+    }
+
+    // CUNIT INSPECTOR
+    {
+        if (is_unit_popup_open) {
+            ImGui::SetNextWindowSize(ImVec2(545, 600));
+        }
+        if (is_unit_popup_open && ImGui::Begin("CUnit Inspector", nullptr, ImGuiWindowFlags_NoResize)) {
+
             ImGui::End( );
         }
     }

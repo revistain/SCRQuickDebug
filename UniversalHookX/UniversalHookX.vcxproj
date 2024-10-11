@@ -177,11 +177,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\debugger\cunit.cpp" />
     <ClCompile Include="src\debugger\debugger_main.cpp" />
     <ClCompile Include="src\debugger\eud.cpp" />
     <ClCompile Include="src\debugger\packet.cpp" />
     <ClCompile Include="src\debugger\pattern.cpp" />
     <ClCompile Include="src\debugger\signature.cpp" />
+    <ClCompile Include="src\debugger\unittable.cpp" />
     <ClCompile Include="src\debugger\variable.cpp" />
     <ClCompile Include="src\drawing.cpp" />
     <ClCompile Include="src\font.cpp" />
@@ -279,6 +281,7 @@
     <ClInclude Include="src\hooks\backend\vulkan\hook_vulkan.hpp" />
     <ClInclude Include="src\hooks\hooks.hpp" />
     <ClInclude Include="src\imgui_things.h" />
+    <ClInclude Include="src\include\cunit.h" />
     <ClInclude Include="src\include\debugger_main.h" />
     <ClInclude Include="src\include\encoding.h" />
     <ClInclude Include="src\include\eud.h" />
@@ -292,7 +295,7 @@
     <ClInclude Include="src\memoryRW.h" />
     <ClInclude Include="src\menu\menu.hpp" />
     <ClInclude Include="src\ratio.h" />
-    <ClInclude Include="src\unittable.h" />
+    <ClInclude Include="src\include\unittable.h" />
     <ClInclude Include="src\utils\utils.hpp" />
   </ItemGroup>
   <ItemGroup>
