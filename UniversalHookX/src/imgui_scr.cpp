@@ -319,7 +319,6 @@ void StarCraft_UI( ) {
                                 }
                                 if (ImGui::TreeNode((void*)(intptr_t)var_table_idx, "%s", func_name.c_str( ))) {
                                     ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX;
-
                                     if (ImGui::BeginTable(std::format("{},##,{}", func_name, var_idx).c_str( ), 5, table_flags)) {
                                         ImGui::TableSetupColumn("type", ImGuiTableColumnFlags_WidthFixed, 92.0f);
                                         ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthFixed, 128.0f);
@@ -634,7 +633,42 @@ void StarCraft_UI( ) {
             ImGui::SetNextWindowSize(ImVec2(545, 600));
         }
         if (is_unit_popup_open && ImGui::Begin("CUnit Inspector", nullptr, ImGuiWindowFlags_NoResize)) {
+            ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+            ImGui::BeginChild("var_child", ImVec2(530, 480), true, ImGuiWindowFlags_None);
+            ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX;
+            if (ImGui::BeginTable("cunit table", 4, table_flags)) {
+                ImGui::TableNextRow( );
+                for (size_t idx = 0; idx < 1700; idx++) {
+                    if (unit_ptr->cunits[idx].orderID != 0) {
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::Text(std::format("idx: {}", idx).c_str());
 
+                        ImGui::TableNextColumn( );
+                        ImGui::Text(std::format("P{}", unit_ptr->cunits[idx].playerID).c_str( ));
+
+                        ImGui::TableNextColumn( );
+                        ImGui::Text(std::format("unit: {}", unit_ptr->cunits[idx].unitID).c_str( ));
+
+                        ImGui::TableNextColumn( );
+                        if (ImGui::Button("View")) {
+                        
+                        }
+                        ImGui::TableNextRow( );
+                    }
+                }
+                /*
+                for (int row = 0; row < func.second.size( ); row++) {
+                    ImGui::TableNextRow( );
+                    ImGui::TableSetColumnIndex(0);
+                    var_idx++;
+                }
+                ImGui::EndTable( );
+            }
+            */
+                ImGui::EndTable( );
+            }
+            ImGui::EndChild( );
+            ImGui::PopStyleVar( );
             ImGui::End( );
         }
     }

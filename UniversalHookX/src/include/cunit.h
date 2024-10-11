@@ -6,11 +6,11 @@
 #include "signature.h"
 
 class CUnits {
-private:
+public:
     // bool needUpdate[1700];
     std::vector<CUnit> cunits;
+    std::vector<CUnit*> display_stack;
     uint32_t start_address;
-public:
     CUnits(uint32_t _start_address);
 
     void update_cunit(uint32_t idx);

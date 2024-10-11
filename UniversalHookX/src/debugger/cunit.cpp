@@ -20,5 +20,6 @@ void CUnits::update( ) {
     */
 
     // 2. or just update all, cpp is fast
+    std::cout << "======================" << std::dec << "sizeof: " << sizeof(CUnit) << "\n";
     ReadMemory((LPCVOID)(start_address + 8), 0x150*1700, (BYTE*)&cunits[0]);
 }
