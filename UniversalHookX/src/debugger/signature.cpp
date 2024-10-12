@@ -31,7 +31,7 @@ uint32_t getEXEAddr( ) { return exeAddr; }
 void setEXEAddr(uint32_t addr) { exeAddr = addr; }
 uint32_t getUnittableAddr( ) { return unittableAddr; }
 void setUnittableAddrOpenGL(uint32_t paddr) { unittableAddr = dwread(paddr + 0xBCE98) + 0x60000; }
-void setUnittableAddr(uint32_t paddr) { unittableAddr = dwread(paddr + 0xBD06A8) - 8; } // or 0xBD06F4 cannot find the diff
+void setUnittableAddr(uint32_t paddr) { unittableAddr = dwread(paddr + 0xBD06F4) - 8; } // or 0xBD06F4 cannot find the diff
 uint32_t getSignatureAddr() { return signature_address; }
 uint32_t getBaseAddr() { return base_address; }
 uint32_t getPacketAddr( ) { return packet_address; }
