@@ -44,3 +44,9 @@ void inputable_form(bool isHex, uint32_t param1, EUDVariable& obj, int var_idx, 
     }
     ImGui::PopStyleColor(1);
 }
+
+namespace ImGui {
+    void CenterAlign(std::string text) {
+        ImGui::SetCursorPosX((ImGui::GetColumnWidth(0) - ImGui::CalcTextSize(text.c_str()).x) * 0.5f);
+    }
+}

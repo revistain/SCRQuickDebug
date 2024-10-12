@@ -42,4 +42,8 @@ inline void ToggleButton(const char* str_id, bool* v) {
     draw_list->AddRectFilled(ImVec2((p.x + center.x) - 9.0f, p.y + 1.5f),
                              ImVec2((p.x + (width / 2) + center.x) - 9.0f, p.y + height - 1.5f), IM_COL32(255, 255, 255, 255), height * rounding);
 }
+
+namespace ImGui {
+    void CenterAlign(std::string text);
+}
 #endif

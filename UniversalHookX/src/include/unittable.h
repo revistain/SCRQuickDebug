@@ -1,8 +1,16 @@
 #ifndef UNITTABLE_H
 #define UNITTABLE_H
 #include <cstdint>
-#include <map>
+#include <unordered_map>
+#include <vector>
 #include <string>
+#include <utility>
+#include <string>
+
+extern std::unordered_map<std::string, int> UnitField;
+extern std::unordered_map<int, std::string> UnitDict;
+extern std::unordered_map<std::string, int> CSpriteFields;
+extern std::vector<std::pair<std::string, int>> CUnitFields;
 
 typedef struct CSprite {
     struct CSprite* prev; // 0x00
@@ -186,9 +194,6 @@ typedef struct CUnit {
     uint8_t bRepMtxX;                 // 0x14E
     uint8_t bRepMtxY;                 // 0x14F
 } CUnit;
-#include <format>
-static_assert(sizeof(CUnit) == 0x150, "Size of CUnit is incorrect!");
 
-extern std::map<std::string, int> CSpriteFields;
-extern std::map<std::string, int> CUnitFields;
+static_assert(sizeof(CUnit) == 0x150, "Size of CUnit is incorrect!");
 #endif

@@ -292,7 +292,7 @@ void StarCraft_UI( ) {
             }
         }
     }
-    // EUDVAR INSPECTOR
+    // EUDVARIABLE INSPECTOR
     {
         if (is_var_popup_open) {
             ImGui::SetNextWindowSize(ImVec2(545, 600));
@@ -326,7 +326,7 @@ void StarCraft_UI( ) {
                                         ImGui::TableSetupColumn("current", ImGuiTableColumnFlags_WidthFixed, 100.0f);
                                         ImGui::TableSetupColumn("Pin", ImGuiTableColumnFlags_WidthFixed, 26.0f);
                                         ImGui::TableHeadersRow( );
-                                        for (int row = 0; row < func.second.size( ); row++) {
+                                        for (size_t row = 0; row < func.second.size( ); row++) {
                                             auto& obj = func.second[row].get( );
                                             ImGui::TableNextRow( );
                                             ImGui::TableSetColumnIndex(0);
@@ -473,7 +473,7 @@ void StarCraft_UI( ) {
                         ImGui::TableHeadersRow( );
                         for (auto& file : var_ptr->file_map) {
                             for (auto& func : file.second) {
-                                for (int row = 0; row < func.second.size( ); row++) {
+                                for (size_t row = 0; row < func.second.size( ); row++) {
                                     auto& obj = func.second[row].get( );
                                     if (!obj.pinned)
                                         continue;
@@ -597,33 +597,33 @@ void StarCraft_UI( ) {
                                 }
                             }
                         }
-                        ImGui::EndTable( );
+                        ImGui::EndTable();
                     }
-                    ImGui::EndChild( );
-                    ImGui::PopStyleVar( );
-                    ImGui::EndTabItem( );
+                    ImGui::EndChild();
+                    ImGui::PopStyleVar();
+                    ImGui::EndTabItem();
                 }
             }
             // things same line with tabs
-            float windowWidth = ImGui::GetWindowWidth( );
+            float windowWidth = ImGui::GetWindowWidth();
             float buttonWidth = 180.0f;
             ImGui::SetCursorPosX(windowWidth - buttonWidth);
-            ImGui::SameLine( );
+            ImGui::SameLine();
             ImGui::Text("                               ");
-            ImGui::SameLine( );
+            ImGui::SameLine();
             ImGui::Text("Dec");
-            ImGui::SameLine( );
+            ImGui::SameLine();
             ToggleButton("hexdec", &isHex);
-            ImGui::SameLine( );
+            ImGui::SameLine();
             ImGui::Text("Hex");
-            ImGui::SameLine( );
+            ImGui::SameLine();
             ImGui::Text("  ");
-            ImGui::SameLine( );
+            ImGui::SameLine();
             if (ImGui::Button("Close"))
                 is_var_popup_open = false;
-            ImGui::Separator( );
-            ImGui::EndTabBar( );
-            ImGui::End( );
+            ImGui::Separator();
+            ImGui::EndTabBar();
+            ImGui::End();
         }
     }
 
@@ -635,26 +635,121 @@ void StarCraft_UI( ) {
         if (is_unit_popup_open && ImGui::Begin("CUnit Inspector", nullptr, ImGuiWindowFlags_NoResize)) {
             ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
             ImGui::BeginChild("var_child", ImVec2(530, 480), true, ImGuiWindowFlags_None);
+            ImGui::Text("* Selected Unit");
             ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX;
-            if (ImGui::BeginTable("cunit table", 4, table_flags)) {
-                ImGui::TableNextRow( );
+            if (ImGui::BeginTable("selected cunit table", 5, table_flags)) {
+                ImGui::TableSetupColumn("index", ImGuiTableColumnFlags_WidthFixed, 90.0f);
+                ImGui::TableSetupColumn("player", ImGuiTableColumnFlags_WidthFixed, 36.0f);
+                ImGui::TableSetupColumn("hp", ImGuiTableColumnFlags_WidthFixed, 90.0f);
+                ImGui::TableSetupColumn("unittype", ImGuiTableColumnFlags_WidthFixed, 200.0f);
+                ImGui::TableSetupColumn("button", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text(std::format("index: ").c_str());
+
+                ImGui::TableNextColumn();
+                ImGui::Text(std::format("P").c_str());
+
+                ImGui::TableNextColumn();
+                ImGui::Text("hp: ");
+
+                ImGui::TableNextColumn();
+                ImGui::Text("");
+
+                ImGui::TableNextColumn();
+                if (ImGui::Button("View")) {
+                    ImGui::OpenPopup("my_select_popup");
+                }
+                ImGui::SameLine();
+                if (ImGui::BeginPopup("my_select_popup")) {
+                    ImGui::Separator();
+                    ImGui::EndPopup();
+                }
+                ImGui::EndTable();
+            }
+            ImGui::Separator();
+            ImGui::Separator();
+            ImGui::Text("* All Existing Unit");
+            if (ImGui::BeginTable("cunit table", 5, table_flags)) {
+                ImGui::TableSetupColumn("index", ImGuiTableColumnFlags_WidthFixed, 90.0f);
+                ImGui::TableSetupColumn("player", ImGuiTableColumnFlags_WidthFixed, 33.0f);
+                ImGui::TableSetupColumn("hp ", ImGuiTableColumnFlags_WidthFixed, 86.0f);
+                ImGui::TableSetupColumn("unittype", ImGuiTableColumnFlags_WidthFixed, 195.0f);
+                ImGui::TableSetupColumn("button", ImGuiTableColumnFlags_WidthFixed, 38.0f);
                 for (size_t idx = 0; idx < 1700; idx++) {
                     if (unit_ptr->cunits[idx].orderID != 0) {
+                        ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(0);
-                        ImGui::Text(std::format("idx: {}", idx).c_str());
+                        ImGui::Text(std::format("index: {}", idx).c_str());
 
-                        ImGui::TableNextColumn( );
-                        ImGui::Text(std::format("P{}", unit_ptr->cunits[idx].playerID).c_str( ));
+                        ImGui::TableNextColumn();
+                        ImGui::Text(std::format("P{}", unit_ptr->cunits[idx].playerID + 1).c_str());
 
-                        ImGui::TableNextColumn( );
-                        ImGui::Text(std::format("unit: {}", unit_ptr->cunits[idx].unitID).c_str( ));
+                        ImGui::TableNextColumn();
+                        ImGui::Text(std::format("hp:{}", unit_ptr->cunits[idx].hp >> 8).c_str());
 
-                        ImGui::TableNextColumn( );
-                        if (ImGui::Button("View")) {
-                        
+                        ImGui::TableNextColumn();
+                        ImGui::Text(std::format("{}", UnitDict[unit_ptr->cunits[idx].unitID]).c_str());
+
+                        ImGui::TableNextColumn();
+                        if (ImGui::Button(std::format("View##idx{}", idx).c_str())) {
+                            if (std::find(unit_ptr->display_stack.begin( ), unit_ptr->display_stack.end( ), idx) == unit_ptr->display_stack.end( )) {
+                                unit_ptr->display_stack.push_back(idx);
+                                std::cout << "pushed idx: " << idx << "\n";
+                            }
+                            
                         }
-                        ImGui::TableNextRow( );
                     }
+                }
+                for (auto& idx : unit_ptr->display_stack) {
+                    ImGui::SetNextWindowSize(ImVec2(465, 700), ImGuiCond_FirstUseEver);
+                    if (ImGui::Begin(std::format("CUnit viewer / idx:{}", idx).c_str( ), nullptr)) {
+                        ImGui::Text(std::format("CUnit Layout of [{} / {}]", UnitDict[unit_ptr->cunits[idx].unitID], unit_ptr->cunits[idx].orderID == 0 ? "Dead" : "Alive").c_str( ));
+                        ImGui::Separator( ); 
+
+                        if (ImGui::BeginTable("CUnitTable", 4, table_flags)) {
+                            ImGui::TableSetupColumn("Offset", ImGuiTableColumnFlags_WidthFixed, 45.0f);
+                            ImGui::TableSetupColumn("Field Name", ImGuiTableColumnFlags_WidthFixed, 200.0f);
+                            ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed, 40.0f);
+                            ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                            ImGui::TableHeadersRow( );
+
+                            int offset = 0;
+                            for (const auto& field : CUnitFields) {
+                                std::string fieldName = field.first;
+                                int fieldSize = field.second;
+
+                                ImGui::TableNextRow( );
+                                ImGui::TableSetColumnIndex(0);
+                                ImGui::Text("0x%03X", offset); // 시작 오프셋
+
+                                ImGui::TableSetColumnIndex(1);
+                                ImGui::Text("%s", fieldName.c_str( )); // 필드 이름
+
+                                ImGui::TableSetColumnIndex(2);
+                                ImGui::Text("%d", fieldSize); // 필드 크기
+
+                                ImGui::TableSetColumnIndex(3);
+                                if (fieldSize == 1) {
+                                    ImGui::Text("0x%02X", *(uint8_t*)((char*)&unit_ptr->cunits[idx] + offset));
+                                } else if (fieldSize == 2) {
+                                    ImGui::Text("0x%04X", *(uint16_t*)((char*)&unit_ptr->cunits[idx] + offset));
+                                } else if (fieldSize == 4) {
+                                    if (fieldName == "hp") {
+                                        ImGui::Text("0x%08X(0x%X)", *(uint32_t*)((char*)&unit_ptr->cunits[idx] + offset), *(uint32_t*)((char*)&unit_ptr->cunits[idx] + offset) >> 8);
+                                    }
+                                    else {
+                                        ImGui::Text("0x%08X", *(uint32_t*)((char*)&unit_ptr->cunits[idx] + offset));
+                                    }
+                                } else {
+                                    ImGui::Text("N/A");
+                                }
+                                offset += fieldSize;
+                            }
+                        }
+                        ImGui::EndTable( );
+                    }
+                    ImGui::End( );
                 }
                 /*
                 for (int row = 0; row < func.second.size( ); row++) {
