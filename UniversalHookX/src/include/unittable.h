@@ -13,23 +13,23 @@ extern std::unordered_map<std::string, int> CSpriteFields;
 extern std::vector<std::pair<std::string, int>> CUnitFields;
 
 typedef struct CSprite {
-    struct CSprite* prev; // 0x00
-    struct CSprite* next; // 0x04
-    uint32_t sprite; // 0x08
-    uint32_t playerID; // 0x0A
-    uint8_t selectionIndex; // 0x0B
-    uint8_t visibilityFlags; // 0x0C
-    uint8_t elevationLevel; // 0x0D
-    uint8_t flags; // 0x0E
-    uint8_t selectionTimer; // 0x0F
-    uint16_t index; // 0x10
-    uint8_t grpWidth;  // 0x12
-    uint8_t grpHeight; // 0x13
-    uint16_t posX;       // 0x14 (same as pos.x)
-    uint16_t posY;       // 0x16 (same as pos.y)
-    uint32_t mainGraphic; // 0x18 (officially 'pImagePrimary', CImage)
-    uint32_t imageHead; // 0x1C
-    uint32_t imageTail; // 0x20
+    struct CSprite* prev;       // 0x00
+    struct CSprite* next;       // 0x04
+    uint32_t sprite;            // 0x08
+    uint32_t playerID;          // 0x0A
+    uint8_t selectionIndex;     // 0x0B
+    uint8_t visibilityFlags;    // 0x0C
+    uint8_t elevationLevel;     // 0x0D
+    uint8_t flags;              // 0x0E
+    uint8_t selectionTimer;     // 0x0F
+    uint16_t index;             // 0x10
+    uint8_t grpWidth;           // 0x12
+    uint8_t grpHeight;          // 0x13
+    uint16_t posX;              // 0x14 (same as pos.x)
+    uint16_t posY;              // 0x16 (same as pos.y)
+    uint32_t mainGraphic;       // 0x18 (officially 'pImagePrimary', CImage)
+    uint32_t imageHead;         // 0x1C
+    uint32_t imageTail;         // 0x20
 } CSprite;
 
 

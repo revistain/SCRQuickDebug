@@ -58,6 +58,7 @@ public:
     std::unordered_map<std::string, std::vector<std::pair<std::string, std::vector<std::reference_wrapper<EUDVariable>>>>> file_map; // damn...
     std::unordered_map<std::string, std::vector<std::reference_wrapper<EUDVariable>>> func_map;
     uint32_t screenTL[2];
+    uint32_t selectedUnit[12];
 
     WireFrame wfdata;
 

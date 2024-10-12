@@ -184,6 +184,11 @@ void Variables::update_value() {
     uint32_t screen_addr = getScreenDataAddr();
     screenTL[0] = dwread(screen_addr);
     screenTL[1] = dwread(screen_addr + 4);
+    for (size_t i = 0; i < 12; i++) {
+        uint32_t read_val = dwread(screen_addr + 8 + i * 4);
+        if (read_val == 0 || (read_val < 0x59CC9A || read_val >= 0x59CC9A + 336 * 1700)) { selectedUnit[i] = 0xFFFFFFFF; }
+        else selectedUnit[i] = (read_val - 0x59CC9A) / 336;
+    }
 
     uint32_t base_addr = getBaseAddr( );
     uint32_t idx = 0;

@@ -3,7 +3,6 @@
 CUnits::CUnits(uint32_t _start_address) : start_address(_start_address) {
     std::cout << "CUnit start addr : 0x" << std::hex << _start_address + 8 << "\n";
     cunits.resize(1700);
-    cunits_buffer.resize(1700);
 }
 void CUnits::update_cunit(uint32_t idx) {
     ReadMemory((LPCVOID)(start_address + 8 + idx * 0x150), 0x150, (BYTE*)&cunits[idx]);
