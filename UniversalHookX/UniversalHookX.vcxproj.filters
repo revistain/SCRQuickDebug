@@ -106,7 +106,4 @@
   <ItemGroup>
     <Font Include="bin\Kostar.ttf" />
   </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="UniversalHookX.rc" />
-  </ItemGroup>
 </Project>

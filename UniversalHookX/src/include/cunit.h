@@ -9,6 +9,7 @@ class CUnits {
 public:
     // bool needUpdate[1700];
     std::vector<CUnit> cunits;
+    std::vector<CUnit> cunits_buffer;
     std::vector<uint32_t> display_stack;
     uint32_t start_address;
     CUnits(uint32_t _start_address);

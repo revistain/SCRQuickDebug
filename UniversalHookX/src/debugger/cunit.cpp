@@ -1,12 +1,9 @@
 #include "cunit.h"
 
 CUnits::CUnits(uint32_t _start_address) : start_address(_start_address) {
-    std::cout << "********** start addr : 0x" << std::hex << _start_address + 8 << "\n";
-    if (_start_address == 0x60000) {
-        start_address = 0;
-        return;
-    }
+    std::cout << "CUnit start addr : 0x" << std::hex << _start_address + 8 << "\n";
     cunits.resize(1700);
+    cunits_buffer.resize(1700);
 }
 void CUnits::update_cunit(uint32_t idx) {
     ReadMemory((LPCVOID)(start_address + 8 + idx * 0x150), 0x150, (BYTE*)&cunits[idx]);

@@ -18,6 +18,7 @@ HANDLE getProcessHandle();
 uint32_t getEXEAddr();
 void setEXEAddr(uint32_t paddr);
 uint32_t getUnittableAddr( );
+void setUnittableAddrOpenGL(uint32_t paddr);
 void setUnittableAddr(uint32_t paddr);
 uint32_t getSignatureAddr( );
 uint32_t getBaseAddr( );

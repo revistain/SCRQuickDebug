@@ -147,12 +147,8 @@ void onImguiStart() {
         // from process
         if (OpenTargetProcess( )) {
             setEXEAddr(GetModuleBaseAddress(L"StarCraft.exe"));
-            setUnittableAddr(GetModuleBaseAddress(L"Opengl32.dll"));
-            std::cout << "unittable: 0x" << std::hex << getUnittableAddr( ) << "\n";
-            if (getUnittableAddr( ) == 0x60000) {
-                setUnittableAddr(findUnitableAddr());
-                std::cout << "unittable: 0x" << std::hex << getUnittableAddr( ) << "\n";
-            }
+            // setUnittableAddrOpenGL(GetModuleBaseAddress(L"Opengl32.dll")); // deprecated
+            setUnittableAddr(getEXEAddr());
             unit_ptr = std::make_unique<CUnits>(getUnittableAddr());
         }
         writeWFData(var_ptr, getEXEAddr( ));
@@ -695,7 +691,6 @@ void StarCraft_UI( ) {
                         if (ImGui::Button(std::format("View##idx{}", idx).c_str())) {
                             if (std::find(unit_ptr->display_stack.begin( ), unit_ptr->display_stack.end( ), idx) == unit_ptr->display_stack.end( )) {
                                 unit_ptr->display_stack.push_back(idx);
-                                std::cout << "pushed idx: " << idx << "\n";
                             }
                             
                         }
@@ -721,28 +716,35 @@ void StarCraft_UI( ) {
 
                                 ImGui::TableNextRow( );
                                 ImGui::TableSetColumnIndex(0);
-                                ImGui::Text("0x%03X", offset); // 시작 오프셋
-
+                                ImGui::Text("0x%03X", offset);
                                 ImGui::TableSetColumnIndex(1);
-                                ImGui::Text("%s", fieldName.c_str( )); // 필드 이름
-
+                                ImGui::Text("%s", fieldName.c_str( ));
                                 ImGui::TableSetColumnIndex(2);
-                                ImGui::Text("%d", fieldSize); // 필드 크기
-
+                                ImGui::Text("%d", fieldSize);
                                 ImGui::TableSetColumnIndex(3);
+
+                                char dummy[3] = "0x";
+                                // if hex
+                                ImGui::SetNextItemWidth(20);
+                                ImGui::InputText(std::format("##cunit_hex_prefix{}", idx).c_str( ), dummy, 2, ImGuiInputTextFlags_ReadOnly);
+                                ImGui::SameLine(0.0f, 0.0f);
                                 if (fieldSize == 1) {
-                                    ImGui::Text("0x%02X", *(uint8_t*)((char*)&unit_ptr->cunits[idx] + offset));
-                                } else if (fieldSize == 2) {
-                                    ImGui::Text("0x%04X", *(uint16_t*)((char*)&unit_ptr->cunits[idx] + offset));
-                                } else if (fieldSize == 4) {
-                                    if (fieldName == "hp") {
-                                        ImGui::Text("0x%08X(0x%X)", *(uint32_t*)((char*)&unit_ptr->cunits[idx] + offset), *(uint32_t*)((char*)&unit_ptr->cunits[idx] + offset) >> 8);
+                                    std::string display_buffer = std::to_string(*(uint8_t*)((char*)&unit_ptr->cunits[idx] + offset));
+                                    char* _display_buffer = &display_buffer[0]; // 241012 TODO: 각자 static한 buffer가 필요함
+                                    ImGui::SetNextItemWidth(70);
+                                    ImGui::InputText(std::format("##cunit_form_hex{}", idx).c_str( ), _display_buffer, 3, ImGuiInputTextFlags_CharsHexadecimal);
+                                    if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                        //(*func)(obj, param1, static_cast<uint32_t>(std::stoul(obj.display_buf[param1], nullptr, 16)));
                                     }
-                                    else {
-                                        ImGui::Text("0x%08X", *(uint32_t*)((char*)&unit_ptr->cunits[idx] + offset));
-                                    }
-                                } else {
-                                    ImGui::Text("N/A");
+                                }
+                                else if (fieldSize == 2) {
+                                    ImGui::Text("%04X", *(uint16_t*)((char*)&unit_ptr->cunits[idx] + offset));
+                                }
+                                else if (fieldSize == 4) {
+                                     ImGui::Text("%08X", *(uint32_t*)((char*)&unit_ptr->cunits[idx] + offset));
+                                }
+                                else {
+                                    ImGui::Text("what?");
                                 }
                                 offset += fieldSize;
                             }
@@ -751,15 +753,6 @@ void StarCraft_UI( ) {
                     }
                     ImGui::End( );
                 }
-                /*
-                for (int row = 0; row < func.second.size( ); row++) {
-                    ImGui::TableNextRow( );
-                    ImGui::TableSetColumnIndex(0);
-                    var_idx++;
-                }
-                ImGui::EndTable( );
-            }
-            */
                 ImGui::EndTable( );
             }
             ImGui::EndChild( );

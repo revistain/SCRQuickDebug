@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <cstring>
+#include <format>
 #include "../imgui_memory_editor.h"
 #include <unordered_map>
 #include "signature.h"
