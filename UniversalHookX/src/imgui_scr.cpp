@@ -293,7 +293,7 @@ void StarCraft_UI( ) {
         if (is_var_popup_open) {
             ImGui::SetNextWindowSize(ImVec2(545, 600));
         }
-        if (is_var_popup_open && ImGui::Begin("EUDVariable Inspector", nullptr, ImGuiWindowFlags_NoResize)) {
+        if (is_var_popup_open && ImGui::Begin("EUDVariable Inspector", &is_var_popup_open, ImGuiWindowFlags_NoResize)) {
             static bool isHex = true;
 
             ImGuiTabBarFlags tab_bar_flags = ImGuiWindowFlags_AlwaysAutoResize;
@@ -605,7 +605,7 @@ void StarCraft_UI( ) {
             float buttonWidth = 180.0f;
             ImGui::SetCursorPosX(windowWidth - buttonWidth);
             ImGui::SameLine();
-            ImGui::Text("                               ");
+            ImGui::Text("                                      ");
             ImGui::SameLine();
             ImGui::Text("Dec");
             ImGui::SameLine();
@@ -613,10 +613,6 @@ void StarCraft_UI( ) {
             ImGui::SameLine();
             ImGui::Text("Hex");
             ImGui::SameLine();
-            ImGui::Text("  ");
-            ImGui::SameLine();
-            if (ImGui::Button("Close"))
-                is_var_popup_open = false;
             ImGui::Separator();
             ImGui::EndTabBar();
             ImGui::End();
@@ -625,19 +621,30 @@ void StarCraft_UI( ) {
 
     // CUNIT INSPECTOR
     {
+        static bool isHex = true;
         if (is_unit_popup_open) {
-            ImGui::SetNextWindowSize(ImVec2(545, 600));
+            ImGui::SetNextWindowSize(ImVec2(500, 600));
         }
-        if (is_unit_popup_open && ImGui::Begin("CUnit Inspector", nullptr, ImGuiWindowFlags_NoResize)) {
+        if (is_unit_popup_open && ImGui::Begin("CUnit Inspector", &is_unit_popup_open, ImGuiWindowFlags_NoResize)) {
             ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
-            ImGui::BeginChild("var_child", ImVec2(530, 480), true, ImGuiWindowFlags_None);
+            float windowWidth = ImGui::GetWindowWidth( );
+            float buttonWidth = 100.0f;
+            ImGui::SetCursorPosX(windowWidth - buttonWidth);
+            ImGui::Text("Dec");
+            ImGui::SameLine( );
+            ToggleButton("hexdec", &isHex);
+            ImGui::SameLine( );
+            ImGui::Text("Hex");
+            ImGui::SameLine( );
+            ImGui::Separator( );
+            ImGui::BeginChild("var_child", ImVec2(485, 480), true, ImGuiWindowFlags_None);
             ImGui::Text("* Selected Unit");
             ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX;
             if (ImGui::BeginTable("selected cunit table", 5, table_flags)) {
-                ImGui::TableSetupColumn("index", ImGuiTableColumnFlags_WidthFixed, 90.0f);
-                ImGui::TableSetupColumn("player", ImGuiTableColumnFlags_WidthFixed, 36.0f);
-                ImGui::TableSetupColumn("hp", ImGuiTableColumnFlags_WidthFixed, 90.0f);
-                ImGui::TableSetupColumn("unittype", ImGuiTableColumnFlags_WidthFixed, 200.0f);
+                ImGui::TableSetupColumn("index", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+                ImGui::TableSetupColumn("player", ImGuiTableColumnFlags_WidthFixed, 30.0f);
+                ImGui::TableSetupColumn("hp ", ImGuiTableColumnFlags_WidthFixed, 78.0f);
+                ImGui::TableSetupColumn("unittype", ImGuiTableColumnFlags_WidthFixed, 190.0f);
                 ImGui::TableSetupColumn("button", ImGuiTableColumnFlags_WidthFixed, 38.0f);
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
@@ -667,10 +674,10 @@ void StarCraft_UI( ) {
             ImGui::Separator();
             ImGui::Text("* All Existing Unit");
             if (ImGui::BeginTable("cunit table", 5, table_flags)) {
-                ImGui::TableSetupColumn("index", ImGuiTableColumnFlags_WidthFixed, 90.0f);
-                ImGui::TableSetupColumn("player", ImGuiTableColumnFlags_WidthFixed, 33.0f);
-                ImGui::TableSetupColumn("hp ", ImGuiTableColumnFlags_WidthFixed, 86.0f);
-                ImGui::TableSetupColumn("unittype", ImGuiTableColumnFlags_WidthFixed, 195.0f);
+                ImGui::TableSetupColumn("index", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+                ImGui::TableSetupColumn("player", ImGuiTableColumnFlags_WidthFixed, 30.0f);
+                ImGui::TableSetupColumn("hp ", ImGuiTableColumnFlags_WidthFixed, 78.0f);
+                ImGui::TableSetupColumn("unittype", ImGuiTableColumnFlags_WidthFixed, 190.0f);
                 ImGui::TableSetupColumn("button", ImGuiTableColumnFlags_WidthFixed, 38.0f);
                 for (size_t idx = 0; idx < 1700; idx++) {
                     if (unit_ptr->cunits[idx].orderID != 0) {
@@ -692,72 +699,138 @@ void StarCraft_UI( ) {
                             if (std::find(unit_ptr->display_stack.begin( ), unit_ptr->display_stack.end( ), idx) == unit_ptr->display_stack.end( )) {
                                 unit_ptr->display_stack.push_back(idx);
                             }
-                            
+                            unit_ptr->isDisplaying[idx] = true;
                         }
                     }
-                }
-                for (auto& idx : unit_ptr->display_stack) {
-                    ImGui::SetNextWindowSize(ImVec2(465, 700), ImGuiCond_FirstUseEver);
-                    if (ImGui::Begin(std::format("CUnit viewer / idx:{}", idx).c_str( ), nullptr)) {
-                        ImGui::Text(std::format("CUnit Layout of [{} / {}]", UnitDict[unit_ptr->cunits[idx].unitID], unit_ptr->cunits[idx].orderID == 0 ? "Dead" : "Alive").c_str( ));
-                        ImGui::Separator( ); 
-
-                        if (ImGui::BeginTable("CUnitTable", 4, table_flags)) {
-                            ImGui::TableSetupColumn("Offset", ImGuiTableColumnFlags_WidthFixed, 45.0f);
-                            ImGui::TableSetupColumn("Field Name", ImGuiTableColumnFlags_WidthFixed, 200.0f);
-                            ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed, 40.0f);
-                            ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-                            ImGui::TableHeadersRow( );
-
-                            int offset = 0;
-                            for (const auto& field : CUnitFields) {
-                                std::string fieldName = field.first;
-                                int fieldSize = field.second;
-
-                                ImGui::TableNextRow( );
-                                ImGui::TableSetColumnIndex(0);
-                                ImGui::Text("0x%03X", offset);
-                                ImGui::TableSetColumnIndex(1);
-                                ImGui::Text("%s", fieldName.c_str( ));
-                                ImGui::TableSetColumnIndex(2);
-                                ImGui::Text("%d", fieldSize);
-                                ImGui::TableSetColumnIndex(3);
-
-                                char dummy[3] = "0x";
-                                // if hex
-                                ImGui::SetNextItemWidth(20);
-                                ImGui::InputText(std::format("##cunit_hex_prefix{}", idx).c_str( ), dummy, 2, ImGuiInputTextFlags_ReadOnly);
-                                ImGui::SameLine(0.0f, 0.0f);
-                                if (fieldSize == 1) {
-                                    std::string display_buffer = std::to_string(*(uint8_t*)((char*)&unit_ptr->cunits[idx] + offset));
-                                    char* _display_buffer = &display_buffer[0]; // 241012 TODO: 각자 static한 buffer가 필요함
-                                    ImGui::SetNextItemWidth(70);
-                                    ImGui::InputText(std::format("##cunit_form_hex{}", idx).c_str( ), _display_buffer, 3, ImGuiInputTextFlags_CharsHexadecimal);
-                                    if (ImGui::IsItemDeactivatedAfterEdit( )) {
-                                        //(*func)(obj, param1, static_cast<uint32_t>(std::stoul(obj.display_buf[param1], nullptr, 16)));
-                                    }
-                                }
-                                else if (fieldSize == 2) {
-                                    ImGui::Text("%04X", *(uint16_t*)((char*)&unit_ptr->cunits[idx] + offset));
-                                }
-                                else if (fieldSize == 4) {
-                                     ImGui::Text("%08X", *(uint32_t*)((char*)&unit_ptr->cunits[idx] + offset));
-                                }
-                                else {
-                                    ImGui::Text("what?");
-                                }
-                                offset += fieldSize;
-                            }
-                        }
-                        ImGui::EndTable( );
-                    }
-                    ImGui::End( );
                 }
                 ImGui::EndTable( );
             }
             ImGui::EndChild( );
             ImGui::PopStyleVar( );
             ImGui::End( );
+        }
+        for (auto& idx : unit_ptr->display_stack) {
+            ImGui::SetNextWindowSize(ImVec2(445, 700), ImGuiCond_FirstUseEver);
+            if (unit_ptr->isDisplaying[idx] && ImGui::Begin(std::format("CUnit viewer / index:{}", idx).c_str( ), &unit_ptr->isDisplaying[idx])) {
+                ImGui::Text(std::format("CUnit Layout of [HP: {} / {} / {}]", unit_ptr->cunits[idx].hp >> 8, UnitDict[unit_ptr->cunits[idx].unitID], unit_ptr->cunits[idx].orderID == 0 ? "Dead" : "Alive").c_str( ));
+                ImGui::Separator( );
+                ImGui::BeginChild("ChildL", ImVec2(ImGui::GetContentRegionAvail( ).x * 0.98f, ImGui::GetContentRegionAvail( ).y * 0.99f), ImGuiWindowFlags_HorizontalScrollbar);
+                ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX;
+                if (ImGui::BeginTable("CUnitTable", 4, table_flags)) {
+                    ImGui::TableSetupColumn("Offset", ImGuiTableColumnFlags_WidthFixed, 42.0f);
+                    ImGui::TableSetupColumn("Field Name", ImGuiTableColumnFlags_WidthFixed, 190.0f);
+                    ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+                    ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 85.0f);
+                    ImGui::TableHeadersRow( );
+
+                    int offset = 0;
+                    for (const auto& field : CUnitFields) {
+                        std::string fieldName = field.first;
+                        int fieldSize = field.second;
+
+                        ImGui::TableNextRow( );
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::Text("0x%03X", offset);
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::Text("%s", fieldName.c_str( ));
+                        ImGui::TableSetColumnIndex(2);
+                        ImGui::Text("%d", fieldSize);
+                        ImGui::TableSetColumnIndex(3);
+
+                        if (isHex) {
+                            char dummy[3] = "0x";
+                            ImGui::SetNextItemWidth(20);
+                            ImGui::InputText(std::format("##cunit_hex_prefix{}", idx).c_str( ), dummy, 2, ImGuiInputTextFlags_ReadOnly);
+                            ImGui::SameLine(0.0f, 0.0f);
+                        }
+                        if (fieldSize == 1) {
+                            char buffer[20];
+                            if (isHex) {
+                                uint8_t value = *(uint8_t*)((char*)&unit_ptr->cunits[idx] + offset);
+                                std::snprintf(buffer, sizeof(buffer), "%02x", value);
+                                ImGui::SetNextItemWidth(20);
+                                ImGui::InputText(std::format("##cunit_form_hex{}/{}", idx, offset).c_str( ), buffer, 3, ImGuiInputTextFlags_CharsHexadecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                    uint8_t ret = std::stoul(buffer, nullptr, 16);
+                                    if (ret >= 0x100)
+                                        ret = 0xFF;
+                                    Internal::bwrite((uint32_t)(getUnittableAddr( ) + 8 + idx * 336 + offset), ret);
+                                }
+                            }
+                            else {
+                                uint8_t value = *(uint8_t*)((char*)&unit_ptr->cunits[idx] + offset);
+                                std::snprintf(buffer, sizeof(buffer), "%u", value);
+                                ImGui::SetNextItemWidth(40);
+                                ImGui::InputText(std::format("##cunit_form_hex{}/{}", idx, offset).c_str( ), buffer, 4, ImGuiInputTextFlags_CharsDecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                    uint8_t ret = std::stoul(buffer, nullptr, 10);
+                                    if (ret >= 0x100)
+                                        ret = 0xFF;
+                                    Internal::bwrite((uint32_t)(getUnittableAddr( ) + 8 + idx * 336 + offset), ret);
+                                }
+                            }
+                        } else if (fieldSize == 2) {
+                            char buffer[20];
+                            if (isHex) {
+                                uint16_t value = *(uint16_t*)((char*)&unit_ptr->cunits[idx] + offset);
+                                std::snprintf(buffer, sizeof(buffer), "%04x", value);
+                                ImGui::SetNextItemWidth(40);
+                                ImGui::InputText(std::format("##cunit_form_hex{}/{}", idx, offset).c_str( ), buffer, 5, ImGuiInputTextFlags_CharsHexadecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                    uint16_t ret = std::stoul(buffer, nullptr, 16);
+                                    if (ret >= 0x10000)
+                                        ret = 0xFFFF;
+                                    Internal::wwrite((uint32_t)(getUnittableAddr( ) + 8 + idx * 336 + offset), ret);
+                                }
+                            } else {
+                                uint16_t value = *(uint16_t*)((char*)&unit_ptr->cunits[idx] + offset);
+                                std::snprintf(buffer, sizeof(buffer), "%u", value);
+                                ImGui::SetNextItemWidth(60);
+                                ImGui::InputText(std::format("##cunit_form_hex{}/{}", idx, offset).c_str( ), buffer, 6, ImGuiInputTextFlags_CharsDecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                    uint16_t ret = std::stoul(buffer, nullptr, 10);
+                                    if (ret >= 0x10000)
+                                        ret = 0xFFFF;
+                                    Internal::wwrite((uint32_t)(getUnittableAddr( ) + 8 + idx * 336 + offset), ret);
+                                }
+                            }
+                            // ImGui::Text("%04X", *(uint16_t*)((char*)&unit_ptr->cunits[idx] + offset));
+                        } else if (fieldSize == 4) {
+                            char buffer[20];
+                            if (isHex) {
+                                uint32_t value = *(uint32_t*)((char*)&unit_ptr->cunits[idx] + offset);
+                                std::snprintf(buffer, sizeof(buffer), "%08x", value);
+                                ImGui::SetNextItemWidth(80);
+                                ImGui::InputText(std::format("##cunit_form_hex{}/{}", idx, offset).c_str( ), buffer, 9, ImGuiInputTextFlags_CharsHexadecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                    uint64_t ret = std::stoull(buffer, nullptr, 16);
+                                    if (ret >= 0xFFFFFFFF)
+                                        ret = 0xFFFFFFFF;
+                                    Internal::dwwrite((uint32_t)(getUnittableAddr( ) + 8 + idx * 336 + offset), static_cast<uint32_t>(ret));
+                                }
+                            } else {
+                                uint32_t value = *(uint32_t*)((char*)&unit_ptr->cunits[idx] + offset);
+                                std::snprintf(buffer, sizeof(buffer), "%u", value);
+                                ImGui::SetNextItemWidth(125);
+                                ImGui::InputText(std::format("##cunit_form_hex{}/{}", idx, offset).c_str( ), buffer, 11, ImGuiInputTextFlags_CharsDecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                    uint64_t ret = std::stoull(buffer, nullptr, 10);
+                                    if (ret >= 0xFFFFFFFF)
+                                        ret = 0xFFFFFFFF;
+                                    Internal::dwwrite((uint32_t)(getUnittableAddr( ) + 8 + idx * 336 + offset), static_cast<uint32_t>(ret));
+                                }
+                            }
+                            // ImGui::Text("%08X", *(uint32_t*)((char*)&unit_ptr->cunits[idx] + offset));
+                        } else {
+                            ImGui::Text("what?");
+                        }
+                        offset += fieldSize;
+                    }
+                }
+                ImGui::EndTable( );
+                ImGui::EndChild( );
+                ImGui::End( );
+            }
         }
     }
     // End the window
