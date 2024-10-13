@@ -42,6 +42,7 @@ static DWORD WINAPI ReinitializeGraphicalHooks(LPVOID lpParam) {
     return 0;
 }
 
+#include "../dependencies/imgui/imgui.h"
 static WNDPROC oWndProc;
 static LRESULT WINAPI WndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     if (uMsg == WM_KEYDOWN) {
@@ -72,6 +73,10 @@ static LRESULT WINAPI WndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
         // Window may not maximize from taskbar because 'H::bShowDemoWindow' is set to true by default. ('hooks.hpp')
         //
         // return ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam) == 0;
+    }
+    ImGuiIO& io = ImGui::GetIO( );
+    if (io.WantCaptureMouse || ImGui::IsItemActivated()) {
+        return true;
     }
 
     return CallWindowProc(oWndProc, hWnd, uMsg, wParam, lParam);

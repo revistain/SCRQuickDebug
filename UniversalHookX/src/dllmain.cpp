@@ -75,6 +75,5 @@ DWORD WINAPI OnProcessDetach(LPVOID lpParam) {
     MH_Uninitialize( );
 
     Console::Free( );
-
     return 0;
 }

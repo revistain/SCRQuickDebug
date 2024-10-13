@@ -20,7 +20,7 @@ uint32_t mrgn_address;
 uint32_t screen_data_address;
 uint32_t wireframe_data_address;
 std::string qdebug_version;
-std::string dll_version = "0002";
+std::string dll_version = "0004";
 
 uint32_t exeAddr = 0;
 uint32_t unittableAddr = 0;

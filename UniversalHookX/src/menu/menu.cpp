@@ -4,6 +4,7 @@
 #include "../dependencies/imgui/imgui_impl_win32.h"
 
 #include "../imgui_scr.h"
+#include "../dllmain.h"
 #include "../drawing.h"
 #include "../font.h"
 
@@ -35,7 +36,7 @@ bool SendMessageToQuickDebug(UINT messageCode, const std::wstring& message) {
 namespace ig = ImGui;
 const uint32_t VERSION_MAIN = 0;
 const uint32_t VERSION_MID = 0;
-const uint32_t VERSION_END = 1;
+const uint32_t VERSION_END = 4;
 
 namespace Menu {
     void InitializeContext(HWND hwnd) {
@@ -52,9 +53,7 @@ namespace Menu {
 
     void Render( ) {
         try {
-            if (!bShowMenu)
-                return;
-
+            if (!bShowMenu) return;
             StarCraft_UI( );
         }
         catch (const std::string& str) {
