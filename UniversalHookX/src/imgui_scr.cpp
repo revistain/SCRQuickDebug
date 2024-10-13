@@ -661,7 +661,7 @@ void StarCraft_UI( ) {
                         ImGui::Text(std::format("{}", UnitDict[unit_ptr->cunits[idx].unitID]).c_str());
                         ImGui::TableNextColumn();
                         if (ImGui::Button(std::format("View##idx{}", idx).c_str())) {
-                            unit_ptr->isDisplaying[idx] = true;
+                            unit_ptr->isDisplayingCUnit[idx] = true;
                         }
                     }
                 }
@@ -688,7 +688,7 @@ void StarCraft_UI( ) {
                         ImGui::Text(std::format("{}", UnitDict[unit_ptr->cunits[idx].unitID]).c_str());
                         ImGui::TableNextColumn();
                         if (ImGui::Button(std::format("View##idx{}", idx).c_str())) {
-                            unit_ptr->isDisplaying[idx] = true;
+                            unit_ptr->isDisplayingCUnit[idx] = true;
                         }
                     }
                 }
@@ -699,9 +699,9 @@ void StarCraft_UI( ) {
             ImGui::End();
         }
         for (size_t idx = 0; idx < 1700; idx++) {
-            if (!unit_ptr->isDisplaying[idx]) continue;
+            if (!unit_ptr->isDisplayingCUnit[idx]) continue;
             ImGui::SetNextWindowSize(ImVec2(445, 700), ImGuiCond_FirstUseEver);
-            if (unit_ptr->isDisplaying[idx] && ImGui::Begin(std::format("CUnit viewer / index:{}", idx).c_str( ), &unit_ptr->isDisplaying[idx])) {
+            if (unit_ptr->isDisplayingCUnit[idx] && ImGui::Begin(std::format("CUnit viewer / index:{}", idx).c_str( ), &unit_ptr->isDisplayingCUnit[idx])) {
                 ImGui::Text(std::format("CUnit Layout of [HP: {} / {} / {}]", unit_ptr->cunits[idx].hp >> 8, UnitDict[unit_ptr->cunits[idx].unitID], unit_ptr->cunits[idx].orderID == 0 ? "Dead" : "Alive").c_str());
                 ImGui::Separator();
                 ImGui::BeginChild("ChildL", ImVec2(ImGui::GetContentRegionAvail().x * 0.98f, ImGui::GetContentRegionAvail().y * 0.99f), ImGuiWindowFlags_HorizontalScrollbar);
@@ -727,18 +727,24 @@ void StarCraft_UI( ) {
                         ImGui::TableSetColumnIndex(3);
 
                         // handle cunit and csprite
-                        if (fieldSize == 4 && (offset == offsetof(CUnit, prev) || offset == offsetof(CUnit, next) ||
-                            offset == offsetof(CUnit, moveTarget) || offset == offsetof(CUnit, orderTarget) ||
-                            offset == offsetof(CUnit, prevPlayerUnit) || offset == offsetof(CUnit, nextPlayerUnit) ||
-                            offset == offsetof(CUnit, subUnit) || offset == offsetof(CUnit, autoTargetUnit) ||
-                            offset == offsetof(CUnit, connectedUnit) || offset == offsetof(CUnit, addon))) {
-                            if (ImGui::Button(std::format("CUnit View##{}/{}", idx, offset).c_str())) {
+                        if (fieldSize == 4 && (
+                            offset == offsetof(CUnit, prev) ||
+                            offset == offsetof(CUnit, next) ||
+                            offset == offsetof(CUnit, moveTarget) ||
+                            offset == offsetof(CUnit, orderTarget) ||
+                            offset == offsetof(CUnit, prevPlayerUnit) ||
+                            offset == offsetof(CUnit, nextPlayerUnit) ||
+                            offset == offsetof(CUnit, subUnit) ||
+                            offset == offsetof(CUnit, autoTargetUnit) ||
+                            offset == offsetof(CUnit, connectedUnit) ||
+                            offset == offsetof(CUnit, addon))) {
+                            if (ImGui::Button(std::format("CUnit##{}/{}", idx, offset).c_str())) {
                                 uint32_t value = *(uint32_t*)((char*)&unit_ptr->cunits[idx] + offset);
                                 uint32_t cunit_base = getUnittableAddr( ) + 8;
                                 
                                 if (value < cunit_base || value >= (cunit_base + 1700 * 336)) continue;
                                 uint32_t sel_index = (value - cunit_base) / 336;
-                                unit_ptr->isDisplaying[sel_index] = true;
+                                unit_ptr->isDisplayingCUnit[sel_index] = true;
                             }
 
                             if (ImGui::IsItemHovered( )) {
@@ -754,7 +760,17 @@ void StarCraft_UI( ) {
                             continue;
                         }
                         else if (offset == offsetof(CUnit, sprite)) {
-                            // todo: add csprite inspector
+                            if (ImGui::Button(std::format("CSprite##{}/{}", idx, offset).c_str( ))) {
+                                uint32_t value = *(uint32_t*)((char*)&unit_ptr->cunits[idx] + offset);
+                                unit_ptr->isDisplayingCSprite[value] = true;
+                            }
+
+                            if (ImGui::IsItemHovered( )) {
+                                uint32_t value = *(uint32_t*)((char*)&unit_ptr->cunits[idx] + offset);
+                                ImGui::SetTooltip(std::format("0x{:08X}", value).c_str( ));
+                            }
+                            offset += 4;
+                            continue;
                         }
 
                         if (isHex) {
@@ -851,7 +867,144 @@ void StarCraft_UI( ) {
                 ImGui::End( );
             }
         }
+        for (auto& csprite : unit_ptr->isDisplayingCSprite) { 
+            const uint32_t idx = csprite.first;
+            if (!unit_ptr->isDisplayingCSprite[idx]) continue;
+            ImGui::SetNextWindowSize(ImVec2(445, 700), ImGuiCond_FirstUseEver);
+            if (unit_ptr->isDisplayingCSprite[idx] && ImGui::Begin(std::format("CSprite viewer / addr: 0x{:08X}", idx).c_str( ), &unit_ptr->isDisplayingCSprite[idx])) {
+                ImGui::Text(std::format("CSprite Layout").c_str());
+                ImGui::Separator( );
+                ImGui::BeginChild("ChildL", ImVec2(ImGui::GetContentRegionAvail( ).x * 0.98f, ImGui::GetContentRegionAvail( ).y * 0.99f), ImGuiWindowFlags_HorizontalScrollbar);
+                ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX;
+                if (ImGui::BeginTable("CSpriteTable", 4, table_flags)) {
+                    ImGui::TableSetupColumn("Offset", ImGuiTableColumnFlags_WidthFixed, 42.0f);
+                    ImGui::TableSetupColumn("Field Name", ImGuiTableColumnFlags_WidthFixed, 190.0f);
+                    ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+                    ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 85.0f);
+                    ImGui::TableHeadersRow( );
+
+                    int offset = 0;
+                    for (const auto& field : CSpriteFields) {
+                        std::string fieldName = field.first;
+                        int fieldSize = field.second;
+                        ImGui::TableNextRow( );
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::Text("0x%03X", offset);
+                        ImGui::TableSetColumnIndex(1);
+                        ImGui::Text("%s", fieldName.c_str( ));
+                        ImGui::TableSetColumnIndex(2);
+                        ImGui::Text("%d", fieldSize);
+                        ImGui::TableSetColumnIndex(3);
+
+                        // handle cunit and csprite
+                        if (fieldSize == 4 && (offset == offsetof(CSprite, prev) || offset == offsetof(CSprite, next))) {
+                            if (ImGui::Button(std::format("CSprite##{}/{}", idx, offset).c_str( ))) {
+                                uint32_t value = *(uint32_t*)(idx + offset);
+                                if (value == 0)
+                                    continue;
+                                unit_ptr->isDisplayingCSprite[value] = true;
+                            }
+
+                            if (ImGui::IsItemHovered( )) {
+                                uint32_t value = *(uint32_t*)(idx + offset);
+                                ImGui::SetTooltip(std::format("0x{:08X}", value).c_str( ));
+                            }
+                            offset += 4;
+                            continue;
+                        }
+
+                        if (isHex) {
+                            char dummy[3] = "0x";
+                            ImGui::SetNextItemWidth(20);
+                            ImGui::InputText(std::format("##csprite_form_hex{}", idx).c_str( ), dummy, 2, ImGuiInputTextFlags_ReadOnly);
+                            ImGui::SameLine(0.0f, 0.0f);
+                        }
+                        if (fieldSize == 1) {
+                            char buffer[20];
+                            if (isHex) {
+                                uint8_t value = *(uint8_t*)(idx + offset);
+                                std::snprintf(buffer, sizeof(buffer), "%02x", value);
+                                ImGui::SetNextItemWidth(20);
+                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str( ), buffer, 3, ImGuiInputTextFlags_CharsHexadecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                    uint8_t ret = std::stoul(buffer, nullptr, 16);
+                                    if (ret >= 0x100)
+                                        ret = 0xFF;
+                                    Internal::bwrite((uint32_t)(idx + offset), ret);
+                                }
+                            } else {
+                                uint8_t value = *(uint8_t*)(idx + offset);
+                                std::snprintf(buffer, sizeof(buffer), "%u", value);
+                                ImGui::SetNextItemWidth(40);
+                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str( ), buffer, 4, ImGuiInputTextFlags_CharsDecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                    uint8_t ret = std::stoul(buffer, nullptr, 10);
+                                    if (ret >= 0x100)
+                                        ret = 0xFF;
+                                    Internal::bwrite((uint32_t)(idx + offset), ret);
+                                }
+                            }
+                        } else if (fieldSize == 2) {
+                            char buffer[20];
+                            if (isHex) {
+                                uint16_t value = *(uint16_t*)(idx + offset);
+                                std::snprintf(buffer, sizeof(buffer), "%04x", value);
+                                ImGui::SetNextItemWidth(40);
+                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str( ), buffer, 5, ImGuiInputTextFlags_CharsHexadecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                    uint16_t ret = std::stoul(buffer, nullptr, 16);
+                                    if (ret >= 0x10000)
+                                        ret = 0xFFFF;
+                                    Internal::wwrite((uint32_t)(idx + offset), ret);
+                                }
+                            } else {
+                                uint16_t value = *(uint16_t*)(idx + offset);
+                                std::snprintf(buffer, sizeof(buffer), "%u", value);
+                                ImGui::SetNextItemWidth(60);
+                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str( ), buffer, 6, ImGuiInputTextFlags_CharsDecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                    uint16_t ret = std::stoul(buffer, nullptr, 10);
+                                    if (ret >= 0x10000)
+                                        ret = 0xFFFF;
+                                    Internal::wwrite((uint32_t)(idx + offset), ret);
+                                }
+                            }
+                        } else if (fieldSize == 4) {
+                            char buffer[20];
+                            if (isHex) {
+                                uint32_t value = *(uint32_t*)(idx + offset);
+                                std::snprintf(buffer, sizeof(buffer), "%08x", value);
+                                ImGui::SetNextItemWidth(80);
+                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str( ), buffer, 9, ImGuiInputTextFlags_CharsHexadecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                    uint64_t ret = std::stoull(buffer, nullptr, 16);
+                                    if (ret >= 0xFFFFFFFF)
+                                        ret = 0xFFFFFFFF;
+                                    Internal::dwwrite((uint32_t)(idx + offset), static_cast<uint32_t>(ret));
+                                }
+                            } else {
+                                uint32_t value = *(uint32_t*)(idx + offset);
+                                std::snprintf(buffer, sizeof(buffer), "%u", value);
+                                ImGui::SetNextItemWidth(125);
+                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str( ), buffer, 11, ImGuiInputTextFlags_CharsDecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                    uint64_t ret = std::stoull(buffer, nullptr, 10);
+                                    if (ret >= 0xFFFFFFFF)
+                                        ret = 0xFFFFFFFF;
+                                    Internal::dwwrite((uint32_t)(idx + offset), static_cast<uint32_t>(ret));
+                                }
+                            }
+                        }
+                        offset += fieldSize;
+                    }
+                }
+                ImGui::EndTable( );
+                ImGui::EndChild( );
+                ImGui::End( );
+            }
+        }
     }
+    
     // End the window
     ImGui::End( );
     ///////////////////////////////////////////////////////////////////////////////

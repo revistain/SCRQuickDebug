@@ -9,14 +9,14 @@
 
 extern std::unordered_map<std::string, int> UnitField;
 extern std::unordered_map<int, std::string> UnitDict;
-extern std::unordered_map<std::string, int> CSpriteFields;
+extern std::vector<std::pair<std::string, int>> CSpriteFields;
 extern std::vector<std::pair<std::string, int>> CUnitFields;
 
 typedef struct CSprite {
     struct CSprite* prev;       // 0x00
     struct CSprite* next;       // 0x04
-    uint32_t sprite;            // 0x08
-    uint32_t playerID;          // 0x0A
+    uint16_t spriteID;          // 0x08
+    uint8_t playerID;           // 0x0A
     uint8_t selectionIndex;     // 0x0B
     uint8_t visibilityFlags;    // 0x0C
     uint8_t elevationLevel;     // 0x0D
@@ -31,7 +31,7 @@ typedef struct CSprite {
     uint32_t imageHead;         // 0x1C
     uint32_t imageTail;         // 0x20
 } CSprite;
-
+static_assert(sizeof(CSprite) == 0x24, "Size of CSprite is incorrect!");
 
 typedef struct CUnit {
     struct CUnit* prev;             // 0x000
@@ -194,6 +194,6 @@ typedef struct CUnit {
     uint8_t bRepMtxX;                 // 0x14E
     uint8_t bRepMtxY;                 // 0x14F
 } CUnit;
-
 static_assert(sizeof(CUnit) == 0x150, "Size of CUnit is incorrect!");
+
 #endif

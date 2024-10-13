@@ -1,10 +1,10 @@
 #include "unittable.h"
 
 
-std::unordered_map<std::string, int> CSpriteFields = {
+std::vector<std::pair<std::string, int>> CSpriteFields = {
     {"prev", 4},
     {"next", 4},
-    {"sprite", 4},
+    {"spriteID", 4},
     {"playerID", 4},
     {"selectionIndex", 1},
     {"visibilityFlags", 1},

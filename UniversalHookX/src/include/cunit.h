@@ -2,12 +2,14 @@
 #define CUNIT_H
 #include <vector>
 #include <iostream>
+#include <unordered_map>
 #include "unittable.h"
 #include "signature.h"
 
 class CUnits {
 public:
-    bool isDisplaying[1700];
+    bool isDisplayingCUnit[1700];
+    std::unordered_map<uint32_t, bool> isDisplayingCSprite;
     std::vector<CUnit> cunits;
     std::vector<CSprite> csprites;
     uint32_t start_address;
