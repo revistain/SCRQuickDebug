@@ -45,6 +45,29 @@ uint32_t findUnitableAddr() {
 }
 
 namespace Internal {
+    bool ChangeMemoryProtection(LPCVOID address, SIZE_T size) {
+        DWORD oldProtect;
+        if (!VirtualProtectEx(getProcessHandle( ), (LPVOID)address, size, PAGE_READWRITE, &oldProtect)) {
+            std::cout << "* Error changing memory protection: " << GetLastError( ) << std::endl;
+            return false;
+        }
+        return true;
+    }
+
+    void PrintMemoryProtectionInfo(LPCVOID address) {
+        std::cout << "---------- print memory ----------\n";
+        MEMORY_BASIC_INFORMATION mbi;
+        if (VirtualQueryEx(getProcessHandle( ), address, &mbi, sizeof(mbi))) {
+            std::cout << "Base Address: " << mbi.BaseAddress << std::endl;
+            std::cout << "Region Size: " << mbi.RegionSize << std::endl;
+            std::cout << "State: " << mbi.State << std::endl;
+            std::cout << "Protect: " << mbi.Protect << std::endl; // 보호 속성 출력
+            std::cout << "Type: " << mbi.Type << std::endl;
+        } else {
+            std::cout << "Error querying memory: " << GetLastError( ) << std::endl;
+        }
+    }
+
     bool IsAddressAccessible(LPCVOID address, SIZE_T length) {
         MEMORY_BASIC_INFORMATION mbi;
         if (VirtualQuery(address, &mbi, sizeof(mbi))) {

@@ -4,8 +4,8 @@
 std::vector<std::pair<std::string, int>> CSpriteFields = {
     {"prev", 4},
     {"next", 4},
-    {"spriteID", 4},
-    {"playerID", 4},
+    {"spriteID", 2},
+    {"playerID", 1},
     {"selectionIndex", 1},
     {"visibilityFlags", 1},
     {"elevationLevel", 1},

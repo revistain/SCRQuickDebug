@@ -45,6 +45,11 @@ typedef struct {
     uint32_t map_title_idx;
 }WireFrame;
 
+typedef struct {
+    uint32_t stack_addr;
+    uint32_t stackCount;
+    uint32_t offset;
+} FuncTrace;
 
 class Variables {
 public:
@@ -61,10 +66,12 @@ public:
     uint32_t selectedUnit[12];
 
     WireFrame wfdata;
+    FuncTrace functrace;
+
 
     Variables(
-        std::string& str_data, std::string& var_data, std::string& gvar_data,
-        std::string& arr_data, std::string& garr_data, std::string& mrgn_data, std::string& wf_data);
+        std::string& str_data, std::string& var_data, std::string& gvar_data, std::string& arr_data,
+        std::string& garr_data, std::string& mrgn_data, std::string& wf_data, std::string& functrace_data);
     //~Variables( );
     // Variables(const Variables& vars);
 

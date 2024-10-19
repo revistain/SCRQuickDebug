@@ -111,10 +111,25 @@ bool writeWFData(std::unique_ptr<Variables>& var_ptr, uint32_t exe_addr) {
     return true;
 }
 
+std::string getCallStack() {
+    std::ostringstream oss;
+    std::string callstackString("[ Waiting for EUD Error or Crash ]");
+    uint32_t stackCount = Internal::dwread(var_ptr->functrace.stackCount);
+    if (stackCount > 0 && stackCount < 1024) {
+        for (size_t i = 1; i <= stackCount; i++) {
+            for (size_t j = 1; j < i; j++) { oss << "  "; }
+            oss << var_ptr->strtable.str[dwread(var_ptr->functrace.stack_addr + 4 * i) + var_ptr->functrace.offset] << "\n";
+        }
+        callstackString = oss.str( );
+    }
+    return callstackString;
+}
+
 
 bool starcraft_input = true;
 static bool is_var_popup_open = false;
 static bool is_unit_popup_open = false;
+static bool is_callstack_popup_open = false;
 GameData updateGameData( ) {
     // if game ended
     if (getElapsedTime(loc_ptr->mrgn_addr) == 0) {
@@ -132,11 +147,18 @@ GameData updateGameData( ) {
     gdata.screen_size_y  = Internal::dwread(exeAddr + 0xB31AC8);
     gdata.console_height = Internal::dwread(exeAddr + 0xB31AC4); // unsued
     gdata.pillar_size    = Internal::dwread(exeAddr + 0xDE6104);
+
+    //std::cout << std::dec << "max string: " << var_ptr->strtable.str.size() << "\n";
+    //std::cout << std::dec << "count: " << Internal::dwread(var_ptr->functrace.stackCount) << "\n";
+    //std::cout << std::hex << "stack_addr: 0x" << var_ptr->functrace.stack_addr << "\n";
+    //std::cout << std::dec << "offset: " << var_ptr->functrace.offset << "\n";
+    //std::cout << std::dec << "test1: " << dwread(var_ptr->functrace.stack_addr + 4) << "\n";
+    //std::cout << std::dec << "test2: " << dwread(var_ptr->functrace.stack_addr + 4) + var_ptr->functrace.offset << "\n";
+    
     loc_ptr->updateData( );
     unit_ptr->update( );
     return gdata;
 }
-
 
 void onImguiStart() {
     if (var_ptr) return;
@@ -144,6 +166,17 @@ void onImguiStart() {
     try {
         var_ptr = std::make_unique<Variables>(getVariables( ));
         sortVariables(var_ptr);
+        //if (Internal::IsAddressAccessible((LPVOID)0x971828, 4)) {
+        //    std::cout << "not accessable\n";
+        //}
+        //Internal::PrintMemoryProtectionInfo((LPVOID)0x971828);
+        //Internal::ChangeMemoryProtection((LPVOID)0x971828, 4);
+        //if (dwwrite(0x971828, 0000000)) {
+        //    std::cout << "Successfully wrote to process memory." << std::endl;
+        //} else {
+        //    std::cout << "Failed to write to process memory." << std::endl;
+        //    std::cout << "Error writing to memory: " << GetLastError( ) << std::endl;
+        //}
 
         // from process
         if (OpenTargetProcess( )) {
@@ -225,6 +258,12 @@ void StarCraft_UI( ) {
                 ImGui::SetWindowFocus("CUnit Inspector");
             } else
                 is_unit_popup_open = true;
+        }
+        else if (ImGui::Button("Open Call Stack")) {
+            if (is_callstack_popup_open) {
+                ImGui::SetWindowFocus("CUnit Inspector");
+            } else
+                is_callstack_popup_open = true;
         }
         
     }
@@ -907,7 +946,7 @@ void StarCraft_UI( ) {
 
                             if (ImGui::IsItemHovered( )) {
                                 uint32_t value = *(uint32_t*)(idx + offset);
-                                ImGui::SetTooltip(std::format("0x{:08X}", value).c_str( ));
+                                ImGui::SetTooltip(std::format("0x{:08X}", value).c_str());
                             }
                             offset += 4;
                             continue;
@@ -916,7 +955,7 @@ void StarCraft_UI( ) {
                         if (isHex) {
                             char dummy[3] = "0x";
                             ImGui::SetNextItemWidth(20);
-                            ImGui::InputText(std::format("##csprite_form_hex{}", idx).c_str( ), dummy, 2, ImGuiInputTextFlags_ReadOnly);
+                            ImGui::InputText(std::format("##csprite_form_hex{}", idx).c_str(), dummy, 2, ImGuiInputTextFlags_ReadOnly);
                             ImGui::SameLine(0.0f, 0.0f);
                         }
                         if (fieldSize == 1) {
@@ -925,69 +964,74 @@ void StarCraft_UI( ) {
                                 uint8_t value = *(uint8_t*)(idx + offset);
                                 std::snprintf(buffer, sizeof(buffer), "%02x", value);
                                 ImGui::SetNextItemWidth(20);
-                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str( ), buffer, 3, ImGuiInputTextFlags_CharsHexadecimal);
-                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str(), buffer, 3, ImGuiInputTextFlags_CharsHexadecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit()) {
                                     uint8_t ret = std::stoul(buffer, nullptr, 16);
                                     if (ret >= 0x100)
                                         ret = 0xFF;
                                     Internal::bwrite((uint32_t)(idx + offset), ret);
                                 }
-                            } else {
+                            }
+                            else {
                                 uint8_t value = *(uint8_t*)(idx + offset);
                                 std::snprintf(buffer, sizeof(buffer), "%u", value);
                                 ImGui::SetNextItemWidth(40);
-                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str( ), buffer, 4, ImGuiInputTextFlags_CharsDecimal);
-                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str(), buffer, 4, ImGuiInputTextFlags_CharsDecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit()) {
                                     uint8_t ret = std::stoul(buffer, nullptr, 10);
                                     if (ret >= 0x100)
                                         ret = 0xFF;
                                     Internal::bwrite((uint32_t)(idx + offset), ret);
                                 }
                             }
-                        } else if (fieldSize == 2) {
+                        }
+                        else if (fieldSize == 2) {
                             char buffer[20];
                             if (isHex) {
                                 uint16_t value = *(uint16_t*)(idx + offset);
                                 std::snprintf(buffer, sizeof(buffer), "%04x", value);
                                 ImGui::SetNextItemWidth(40);
-                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str( ), buffer, 5, ImGuiInputTextFlags_CharsHexadecimal);
-                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str(), buffer, 5, ImGuiInputTextFlags_CharsHexadecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit()) {
                                     uint16_t ret = std::stoul(buffer, nullptr, 16);
                                     if (ret >= 0x10000)
                                         ret = 0xFFFF;
                                     Internal::wwrite((uint32_t)(idx + offset), ret);
                                 }
-                            } else {
+                            }
+                            else {
                                 uint16_t value = *(uint16_t*)(idx + offset);
                                 std::snprintf(buffer, sizeof(buffer), "%u", value);
                                 ImGui::SetNextItemWidth(60);
-                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str( ), buffer, 6, ImGuiInputTextFlags_CharsDecimal);
-                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str(), buffer, 6, ImGuiInputTextFlags_CharsDecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit()) {
                                     uint16_t ret = std::stoul(buffer, nullptr, 10);
                                     if (ret >= 0x10000)
                                         ret = 0xFFFF;
                                     Internal::wwrite((uint32_t)(idx + offset), ret);
                                 }
                             }
-                        } else if (fieldSize == 4) {
+                        }
+                        else if (fieldSize == 4) {
                             char buffer[20];
                             if (isHex) {
                                 uint32_t value = *(uint32_t*)(idx + offset);
                                 std::snprintf(buffer, sizeof(buffer), "%08x", value);
                                 ImGui::SetNextItemWidth(80);
-                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str( ), buffer, 9, ImGuiInputTextFlags_CharsHexadecimal);
-                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str(), buffer, 9, ImGuiInputTextFlags_CharsHexadecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit()) {
                                     uint64_t ret = std::stoull(buffer, nullptr, 16);
                                     if (ret >= 0xFFFFFFFF)
                                         ret = 0xFFFFFFFF;
                                     Internal::dwwrite((uint32_t)(idx + offset), static_cast<uint32_t>(ret));
                                 }
-                            } else {
+                            }
+                            else {
                                 uint32_t value = *(uint32_t*)(idx + offset);
                                 std::snprintf(buffer, sizeof(buffer), "%u", value);
                                 ImGui::SetNextItemWidth(125);
-                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str( ), buffer, 11, ImGuiInputTextFlags_CharsDecimal);
-                                if (ImGui::IsItemDeactivatedAfterEdit( )) {
+                                ImGui::InputText(std::format("##csprite_form_hex{}/{}", idx, offset).c_str(), buffer, 11, ImGuiInputTextFlags_CharsDecimal);
+                                if (ImGui::IsItemDeactivatedAfterEdit()) {
                                     uint64_t ret = std::stoull(buffer, nullptr, 10);
                                     if (ret >= 0xFFFFFFFF)
                                         ret = 0xFFFFFFFF;
@@ -998,10 +1042,22 @@ void StarCraft_UI( ) {
                         offset += fieldSize;
                     }
                 }
-                ImGui::EndTable( );
-                ImGui::EndChild( );
-                ImGui::End( );
+                ImGui::EndTable();
+                ImGui::EndChild();
+                ImGui::End();
             }
+        }
+    }
+
+    // CALLSTACK INSPECTOR
+    {
+        if (is_callstack_popup_open) {
+            ImGui::SetNextWindowSize(ImVec2(500, 600));
+        }
+        if (is_callstack_popup_open && ImGui::Begin("CallStack Inspector", &is_callstack_popup_open)) {
+            ImGui::TextWrapped(getCallStack( ).c_str( ));
+            ImGui::Spacing( );
+            ImGui::End( );
         }
     }
     ImGui::End( );

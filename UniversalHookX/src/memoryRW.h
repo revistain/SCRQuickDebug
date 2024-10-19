@@ -16,6 +16,9 @@ uint32_t findUnitableAddr( );
 uint32_t getElapsedTime(uint32_t mrgn_addr);
 
 namespace Internal {
+    bool ChangeMemoryProtection(LPCVOID address, SIZE_T size);
+    void PrintMemoryProtectionInfo(LPCVOID address);
+    bool IsAddressAccessible(LPCVOID address, SIZE_T length);
     std::vector<uint8_t> vecread(uint32_t address, size_t size);
     uint32_t dwread(uint32_t address);
     uint16_t wread(uint32_t address);

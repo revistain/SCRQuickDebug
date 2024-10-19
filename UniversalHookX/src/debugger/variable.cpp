@@ -46,9 +46,9 @@ StringTable::StringTable(std::string& str_data) {
 }
 
 Variables::Variables(
-    std::string& str_data, std::string& var_data, std::string& gvar_data,
-    std::string& arr_data, std::string& garr_data, std::string& mrgn_data, std::string& wf_data
-) : strtable(str_data) {
+    std::string& str_data, std::string& var_data, std::string& gvar_data, std::string& arr_data,
+    std::string& garr_data, std::string& mrgn_data, std::string& wf_data, std::string& functrace_data
+    ) : strtable(str_data) {
     screenTL[0] = 0;
     screenTL[1] = 0;
     uint32_t file_idx = 0;
@@ -95,10 +95,6 @@ Variables::Variables(
     LocationsUse.resize(255);
 	uint32_t loc_str_idx = 0;
 	uint32_t loc_idx = 0;
-    for (size_t i = 0; i < strtable.str.size( ); i++) {
-        // std::cout << i << "/ " << strtable.str[i] << "\n";
-    }
-
     for (size_t i = 0; i < mrgn_data.size( ); i += 8) {
         std::memcpy(&loc_str_idx, &mrgn_data[i], sizeof(uint32_t));
         std::memcpy(&loc_idx, &mrgn_data[i + 4], sizeof(uint32_t));
@@ -109,6 +105,12 @@ Variables::Variables(
     std::memcpy(&wfdata.isSingle, &wf_data[0], sizeof(uint32_t));
     std::memcpy(&wfdata.map_title_offset, &wf_data[4], sizeof(uint32_t));
     std::memcpy(&wfdata.map_title_idx, &wf_data[8], sizeof(uint32_t));
+
+    std::memcpy(&functrace.stack_addr, &functrace_data[0], sizeof(uint32_t));
+    functrace.stack_addr += base_addr;
+    std::memcpy(&functrace.stackCount, &functrace_data[4], sizeof(uint32_t));
+    functrace.stackCount += base_addr;
+    std::memcpy(&functrace.offset, &functrace_data[8], sizeof(uint32_t));
 }
 
 Variables init_variables() {
@@ -173,9 +175,18 @@ Variables init_variables() {
     section_size = dwread(wf_addr + 4);
     std::string wf_data = strread(wf_addr + 8, 30);
 
+    const uint32_t ft_addr = getFuncTraceDataAddr( );
+    section_name = strread(ft_addr, 4);
+    std::cout << "section: " << section_name << std::endl;
+    if (section_name != "FTCD") {
+        throw "cannot find FTCD";
+    }
+    section_size = dwread(ft_addr + 4);
+    std::string ft_data = strread(ft_addr + 8, 12);
+
 	return Variables::Variables(
-        string_data, var_data, gvar_data,
-        arr_data, garr_data, mrgn_data, wf_data
+        string_data, var_data, gvar_data, arr_data,
+        garr_data, mrgn_data, wf_data, ft_data
     );
 }
 

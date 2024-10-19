@@ -19,8 +19,9 @@ uint32_t garr_adress;
 uint32_t mrgn_address;
 uint32_t screen_data_address;
 uint32_t wireframe_data_address;
+uint32_t functrace_data_address;
 std::string qdebug_version;
-std::string dll_version = "0004";
+std::string dll_version = "0005";
 
 uint32_t exeAddr = 0;
 uint32_t unittableAddr = 0;
@@ -43,6 +44,7 @@ uint32_t getGArrAddr( ) { return garr_adress; }
 uint32_t getMRGNDataAddr() { return mrgn_address; }
 uint32_t getScreenDataAddr( ) { return screen_data_address; }
 uint32_t getWireFrameDataAddr( ) { return wireframe_data_address; }
+uint32_t getFuncTraceDataAddr( ) { return functrace_data_address; }
 
 std::vector<uint8_t> StringToByteVector(std::string& str) {
     std::vector<uint8_t> ret = std::vector<uint8_t>(str.begin( ), str.end( ));
@@ -98,7 +100,7 @@ bool OpenTargetProcess() {
     }
 
     std::cout << "hProcess Opened\n";
-    hProcess = OpenProcess(PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION, FALSE, processID);
+    hProcess = OpenProcess(PROCESS_VM_OPERATION |PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION, FALSE, processID);
     if (hProcess == NULL) {
         std::cerr << "Failed to open process. Error code: " << GetLastError() << std::endl;
         return false;
@@ -243,6 +245,7 @@ void init_signature() {
             mrgn_address = base_address + dwread(signature_address + 68);
             screen_data_address = base_address + unEPD(dwread(signature_address + 72));
             wireframe_data_address = base_address + dwread(signature_address + 76);
+            functrace_data_address = base_address + dwread(signature_address + 80);
         }
         else { std::cout << "cannot find signature address\n"; }
     }

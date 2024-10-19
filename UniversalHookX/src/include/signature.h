@@ -31,6 +31,7 @@ uint32_t getGArrAddr( );
 uint32_t getMRGNDataAddr( );
 uint32_t getScreenDataAddr( );
 uint32_t getWireFrameDataAddr( );
+uint32_t getFuncTraceDataAddr( );
 
 
 std::string strread(uint32_t address, size_t size);
