@@ -1,23 +1,28 @@
-### 241013 signature 0.0.4
+### 241019 signature 0.0.5
+###################### version ##########################
 from eudplib import *
 eudplib_type = 0
 def compare_versions(version1, version2):
-    # print(version1)
-    # print(version2)
     v1_parts = list(map(int, version1.split('.')[:2]))
     v2_parts = list(map(int, version2.split('.')[:2]))
     return v1_parts > v2_parts
 if compare_versions(eudplibVersion(), "0.77.9"):
     eudplib_type = 1
-
 ep_assert(eudplib_type != 0, "euddraft 0.10.0.0 이상 버전을 사용하여 주세요 !!")
-    
+#########################################################
+
+##################### settings ##########################
+# isTraced = int(settings.get("trace", 0))
+#########################################################
+
 import eudplib.core.variable.eudv as ev
-import eudplib.core.eudfunc.eudfuncn as ef
+import eudplib.core.eudfunc.eudfuncn as efn
+import eudplib.core.eudfunc.eudf as ef
 import eudplib.collections.eudarray as ea
 import eudplib.epscript.helper as hp
 import struct
 import inspect
+import sys
 import os
         
 isEUDFunc = False
@@ -29,6 +34,72 @@ frames = {}
 global_frames = {}
 frames_array = {}
 global_frames_array = {}
+
+######################## trace ###########################
+functrace_stack = Db(1024*4)
+functrace_count = EUDVariable(0)
+functrace_trig = EUDXVariable(EPD(functrace_stack), SetTo, 0, 0xFFFFFFFF)
+collected_functrace = []
+
+# stackdepth = 0
+def profile(frame, event, arg):
+    global stackdepth
+    if event == 'call':
+        if not frame.f_code.co_filename.endswith(".eps") or frame.f_code.co_name.startswith("_"):
+            return profile
+        current_index = 0
+        lineno = frame.f_lineno - 4
+        msg = "%s|%s|%s" % (frame.f_code.co_filename.split('TriggerEditor', 1)[-1], frame.f_code.co_name, lineno)
+        if msg in collected_functrace:
+            current_index = collected_functrace.index(msg)
+        else:
+            collected_functrace.append(msg)
+            current_index = len(collected_functrace) - 1
+            
+        VProc([functrace_trig], [
+            functrace_count.AddNumber(1),
+            functrace_trig.AddDest(1),
+            functrace_trig.SetNumber(current_index),
+        ])
+        
+        # print(stackdepth * "    ", end="")
+        # print("* started  :", msg)
+        # stackdepth += 1
+        
+        self = frame.f_back.f_back.f_locals['self']
+        self._signature_isprofiled = True
+    elif event == 'return':
+        if not frame.f_code.co_filename.endswith(".eps") or frame.f_code.co_name.startswith("_"):
+            return profile
+        lineno = frame.f_lineno
+        # msg = "%s|%s|%s" % (frame.f_code.co_filename.split('TriggerEditor', 1)[-1], frame.f_code.co_name, lineno)
+        # stackdepth -= 1
+        # print(stackdepth * "    ", end="")
+        # print("* ended    :", msg)
+        
+        self = frame.f_back.f_back.f_locals['self']
+        if self._retn != None and self._retn != 0:
+            ...
+        else:
+            DoActions(
+                functrace_count.SubtractNumber(1),
+                functrace_trig.SubtractDest(1)
+            )
+    return profile
+
+original_EUDReturn = efn.EUDFuncN._add_return
+def _patched_EUDReturn(*args):
+    if not hasattr(efn._current_compiled_func, '_signature_isprofiled'):
+        return original_EUDReturn(*args)
+    
+    DoActions(
+        functrace_count.SubtractNumber(1),
+        functrace_trig.SubtractDest(1)
+    )
+    original_EUDReturn(*args)
+efn.EUDFuncN._add_return = _patched_EUDReturn
+#########################################################
+
 original_init = ev.EUDVariable.__init__
 def _patched_init(self, *args, **kwargs):
     if eudplib_type == 0:
@@ -182,26 +253,14 @@ def find_cgfw_names(garr):
         except KeyError:
             ...
 
-oldfbody = ef.EUDFuncN._create_func_body
-def registerEUDFunc(self, *args, **kwargs):
-    global isEUDFunc
-    if eudplib_type == 0:
-        isEUDFunc = True
-        oldfbody(self, *args, **kwargs)
-        isEUDFunc = False
-    elif eudplib_type == 1:
-        isEUDFunc = True
-        oldfbody(self, *args, **kwargs)
-        isEUDFunc = False
-ef.EUDFuncN._create_func_body = registerEUDFunc
-
-signatureEPD = EPD(Db("TEMPjknOSDIfnwlnlSNDKlnfkopqYwZL0004EDAC\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1")) # 40bytes
+## 중간에 있는 숫자 00??가 signature의 버전입니다. 이 버전과 dll의 버전이 일치해야함
+signatureEPD = EPD(Db("TEMPjknOSDIfnwlnlSNDKlnfkopqYwZL0005EDAC\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1")) # 40bytes
 
 ##### custom defined sections
 ##  string
 ##  4b      : STRS
 ##  4b      : size of strings
-##  strs    : func strings
+##  strs    : all strings
 
 ### variable table
 ##  4b      : VART
@@ -227,8 +286,7 @@ signatureEPD = EPD(Db("TEMPjknOSDIfnwlnlSNDKlnfkopqYwZL0004EDAC\1\1\1\1\1\1\1\1\
 ##  4b      : MRNT
 ##  4b      : size of locations
 ##  8b*locs : loc_data(loc name, loc number)
-#####
-
+####
 strs           = []
 var_data       = []
 gvar_data      = []
@@ -355,15 +413,24 @@ def process_wf_colors():
     map_title_idx = len(strs) - 1
     
     isSingle = f_strlen(0x6D0F78)
-    _wfDataBinaray = b'\0\0\0\0'
-    _wfDataBinaray += struct.pack("<I", lobby_tile_offset)
-    _wfDataBinaray += struct.pack("<I", map_title_idx)
+    _wfDataBinary = b'\0\0\0\0'
+    _wfDataBinary += struct.pack("<I", lobby_tile_offset)
+    _wfDataBinary += struct.pack("<I", map_title_idx)
     f_dwwrite_epd(EPD(WireFrameDb)+2, isSingle)
     
-    wfDataBinaray = b'WFST' + struct.pack("<I", len(_wfDataBinaray))
-    wfDataBinaray += _wfDataBinaray
-    WireFrameDb << Db(wfDataBinaray)
+    wfDataBinary = b'WFST' + struct.pack("<I", len(_wfDataBinary))
+    wfDataBinary += _wfDataBinary
+    WireFrameDb << Db(wfDataBinary)
 
+saved_functrace_str_offset = 0
+def process_functrace():
+    global saved_functrace_str_offset
+    saved_functrace_str_offset = len(strs)
+    for functrace in collected_functrace:
+        strs.append(functrace)
+    print("================ strs:", len(strs))
+
+FuncTraceDb = Forward() # Db: traceStackDb, traceCount, strs offset
 screenDbEPD = EPD(Db(56)) # screen top, left(0 ~ 0x1FFF), selected unitindex(x12)
 mapPathDbEPD = EPD(Db(260))
 pathSignatureEPD = EPD(Db("TEMPNkdfhLpZmqWnRbZlfhInbpQYtZBwjeOqmPlW"))
@@ -379,6 +446,7 @@ def save_data():
     process_garrs()
     process_mrgn()
     process_wf_colors()
+    process_functrace()
     
     # restore header
     act = []
@@ -396,6 +464,8 @@ def save_data():
     stringBinary += _stringBinaray
     stringDb << Db(stringBinary)
 
+    print("==-=-=-=-=-=-= len: ", len(strs))
+    
     #####
     ### variable table
     ##  4b      : VART
@@ -472,22 +542,30 @@ def save_data():
     funcMRGNDataBinary += _funcMRGNDataBinaray
     MRGNDataDb << Db(funcMRGNDataBinary)
     
+    ### FTCD
+    global saved_functrace_str_offset
+    _functraceBinary = b'\0\0\0\0'
+    _functraceBinary += b'\0\0\0\0'
+    _functraceBinary += struct.pack("<I", saved_functrace_str_offset)
+    act.append(SetMemoryEPD(EPD(functrace_stack), SetTo, 0xEDACEDAC))
+    act.append(SetMemoryEPD(EPD(FuncTraceDb)+2, SetTo, functrace_stack))
+    act.append(SetMemoryEPD(EPD(FuncTraceDb)+3, SetTo, functrace_count.getValueAddr()))
+    
+    functraceBinary = b'FTCD' + struct.pack("<I", len(_functraceBinary))
+    functraceBinary += _functraceBinary
+    FuncTraceDb << Db(functraceBinary)
+    
+    
     # save screen data
     f_repmovsd_epd(screenDbEPD, EPD(0x628470), 1)
     f_repmovsd_epd(screenDbEPD+1, EPD(0x628448), 1)
+    # save selected units offset
     f_repmovsd_epd(screenDbEPD+2, EPD(0x6284B8), 12)
     if EUDExecuteOnce()():
-        # save map path data
-        # f_repmovsd_epd(mapPathDbEPD, EPD(0x57FD3C), 65)
         modify_map_name()
         DoActions(act)
     EUDEndExecuteOnce()
 
-
-def dwread(ba, offset):
-    return int.from_bytes(ba[offset:offset+4], byteorder="little")
-def bread(ba, offset):
-    return ba[offset]
 
 def init_signature():
     DoActions([
@@ -501,12 +579,15 @@ def init_signature():
         SetMemoryEPD(signatureEPD+17, SetTo, MRGNDataDb),
         SetMemoryEPD(signatureEPD+18, SetTo, screenDbEPD),
         SetMemoryEPD(signatureEPD+19, SetTo, WireFrameDb),
+        SetMemoryEPD(signatureEPD+20, SetTo, FuncTraceDb),
     ])
+    
 
 def onPluginStart():
     init_signature()
 
 def beforeTriggerExec():
+    sys.setprofile(profile)
     ...
     
 def afterTriggerExec():
@@ -519,3 +600,4 @@ def afterTriggerExec():
     for garr in collected_garray:
         find_cgfw_names(garr)
     save_data()
+    sys.setprofile(None)
