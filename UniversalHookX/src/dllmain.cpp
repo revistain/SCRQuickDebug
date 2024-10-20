@@ -1,9 +1,9 @@
 #include <Windows.h>
 #include <iostream>
 #include <thread>
-#include <detours.h>
 #include "console/console.hpp"
 
+#include <detour.h>
 #include "hooks/hooks.hpp"
 #include "utils/utils.hpp"
 
