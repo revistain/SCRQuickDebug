@@ -41,9 +41,13 @@ functrace_count = EUDVariable(0)
 functrace_trig = EUDXVariable(EPD(functrace_stack), SetTo, 0, 0xFFFFFFFF)
 collected_functrace = []
 
+#########################################################
+
+#########################################################
+
 # stackdepth = 0
 def profile(frame, event, arg):
-    global stackdepth
+    global stackdepth, end_trig, entry_trig, initialized
     if event == 'call':
         if not frame.f_code.co_filename.endswith(".eps") or frame.f_code.co_name.startswith("_"):
             return profile
@@ -61,6 +65,10 @@ def profile(frame, event, arg):
             functrace_trig.AddDest(1),
             functrace_trig.SetNumber(current_index),
         ])
+
+        ################################################
+
+        #################################################
         
         # print(stackdepth * "    ", end="")
         # print("* started  :", msg)
@@ -98,8 +106,7 @@ def _patched_EUDReturn(*args):
     )
     original_EUDReturn(*args)
 efn.EUDFuncN._add_return = _patched_EUDReturn
-#########################################################
-
+#########################################################s
 original_init = ev.EUDVariable.__init__
 def _patched_init(self, *args, **kwargs):
     if eudplib_type == 0:

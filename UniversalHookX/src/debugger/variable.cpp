@@ -74,7 +74,7 @@ Variables::Variables(
         std::memcpy(&file_idx, &arr_data[i], sizeof(uint32_t));
         std::memcpy(&func_idx, &arr_data[i + 4], sizeof(uint32_t));
         std::memcpy(&var_idx, &arr_data[i + 8], sizeof(uint32_t));
-        std::memcpy(&addr, &arr_data[i + 12], sizeof(uint32_t)); // EUDArray pass epd from euddraft 0.1.0.0
+        std::memcpy(&addr, &arr_data[i + 12], sizeof(uint32_t)); // EUDArray pass epd from euddraft 0.10.0.0
         std::memcpy(&size, &arr_data[i + 16], sizeof(uint32_t));
         eudarrs.emplace_back(strtable, file_idx, func_idx, var_idx, base_addr + unEPD(addr), size);
         eudarrs[eudarrs.size( ) - 1].cgfw_type = "EUDArray";
@@ -111,6 +111,12 @@ Variables::Variables(
     std::memcpy(&functrace.stackCount, &functrace_data[4], sizeof(uint32_t));
     functrace.stackCount += base_addr;
     std::memcpy(&functrace.offset, &functrace_data[8], sizeof(uint32_t));
+    std::memcpy(&functrace.timestamp_addr, &functrace_data[12], sizeof(uint32_t));
+    functrace.timestamp_addr += base_addr;
+    std::memcpy(&functrace.timestampCount, &functrace_data[16], sizeof(uint32_t));
+    functrace.timestampCount += base_addr;
+    std::memcpy(&functrace.timestamptime_addr, &functrace_data[20], sizeof(uint32_t));
+    functrace.timestamptime_addr += base_addr;
 }
 
 Variables init_variables() {
@@ -182,7 +188,7 @@ Variables init_variables() {
         throw "cannot find FTCD";
     }
     section_size = dwread(ft_addr + 4);
-    std::string ft_data = strread(ft_addr + 8, 12);
+    std::string ft_data = strread(ft_addr + 8, 24);
 
 	return Variables::Variables(
         string_data, var_data, gvar_data, arr_data,

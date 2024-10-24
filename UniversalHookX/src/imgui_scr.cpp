@@ -4,6 +4,7 @@
 #include "signature.h"
 #include "font.h"
 #include "imgui_things.h"
+#include "timestamp.h"
 #include "console/console.hpp"
 #include <format>
 #include <memory>
@@ -139,6 +140,7 @@ GameData updateGameData( ) {
 
     // from eudplib
     var_ptr->update_value( );
+    analyzeTimeStamp(var_ptr);
 
     // from process
     GameData gdata;
@@ -1059,6 +1061,12 @@ void StarCraft_UI( ) {
             ImGui::Spacing( );
             ImGui::End( );
         }
+    }
+    if (ImGui::Button("start")) {
+        startTimeStamp(var_ptr);
+    }
+    if (ImGui::Button("end")) {
+        endTimeStamp();
     }
     ImGui::End( );
     ///////////////////////////////////////////////////////////////////////////////

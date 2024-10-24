@@ -184,6 +184,7 @@
     <ClCompile Include="src\debugger\packet.cpp" />
     <ClCompile Include="src\debugger\pattern.cpp" />
     <ClCompile Include="src\debugger\signature.cpp" />
+    <ClCompile Include="src\debugger\timestamp.cpp" />
     <ClCompile Include="src\debugger\unittable.cpp" />
     <ClCompile Include="src\debugger\variable.cpp" />
     <ClCompile Include="src\drawing.cpp" />
@@ -291,6 +292,7 @@
     <ClInclude Include="src\include\pattern.h" />
     <ClInclude Include="src\include\section.h" />
     <ClInclude Include="src\include\signature.h" />
+    <ClInclude Include="src\include\timestamp.h" />
     <ClInclude Include="src\include\variable.h" />
     <ClInclude Include="src\LocationDraw.h" />
     <ClInclude Include="src\memoryRW.h" />

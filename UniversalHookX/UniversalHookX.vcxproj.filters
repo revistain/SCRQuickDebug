@@ -46,6 +46,7 @@
     <ClCompile Include="src\imgui_things.cpp" />
     <ClCompile Include="src\debugger\cunit.cpp" />
     <ClCompile Include="src\debugger\unittable.cpp" />
+    <ClCompile Include="src\debugger\timestamp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\console\console.hpp" />
@@ -102,6 +103,7 @@
     <ClInclude Include="src\imgui_things.h" />
     <ClInclude Include="src\imgui_memory_editor.h" />
     <ClInclude Include="src\include\cunit.h" />
+    <ClInclude Include="src\include\timestamp.h" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="bin\Kostar.ttf" />

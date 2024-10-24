@@ -13,6 +13,7 @@
 #include "game_data.h"
 #include "LocationDraw.h"
 #include "cunit.h"
+#include "timestamp.h"
 
 void StarCraft_UI( );
 void setExit( );

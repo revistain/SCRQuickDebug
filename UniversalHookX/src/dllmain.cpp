@@ -16,25 +16,28 @@
 DWORD WINAPI OnProcessAttach(LPVOID lpParam);
 DWORD WINAPI OnProcessDetach(LPVOID lpParam);
 
+HANDLE hKeyHandle = NULL;
 HINSTANCE g_hInstance = NULL;
 HINSTANCE getDllHandle( ) { return g_hInstance; }
 
 DWORD WINAPI KeyPressListener(LPVOID lpParam) {
     while (true) {
         if (isExit() || (GetAsyncKeyState(VK_F9) & 0x8000)) {
+            ensureEndTimestampThread();
             FreeLibraryAndExitThread(static_cast<HMODULE>(lpParam), 0);
         }
         if ((GetAsyncKeyState(VK_F12) )) {
-            std::string callstack = getCallStack( );
+            // std::string callstack = getCallStack( );
             int result = MessageBoxA(
                 NULL,                                                        // 부모 윈도우 핸들(NULL이면 최상위 윈도우)
-                std::format("SC:R Crash CallStack\n{}", callstack).c_str( ), // 메시지 내용
+                std::format("SC:R Crashed!!").c_str( ), // 메시지 내용
                 "QuickDebug CallStack popup",                                   // 메시지 상자 제목
                 MB_OK | MB_ICONQUESTION                                      // 확인 및 취소 버튼과 아이콘
             );
         }
         Sleep(100);
     }
+    CloseHandle(hKeyHandle);
     return 0;
 }
 
@@ -77,10 +80,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
         if (hHandle != NULL) {
             CloseHandle(hHandle);
         }
-        HANDLE hKeyHandle = CreateThread(NULL, 0, KeyPressListener, hinstDLL, 0, NULL);
-        if (hKeyHandle != NULL) {
-            CloseHandle(hKeyHandle);
-        }
+        hKeyHandle = CreateThread(NULL, 0, KeyPressListener, hinstDLL, 0, NULL);
         // TerminateProcess 함수 후킹
         DetourTransactionBegin( );
         DetourUpdateThread(GetCurrentThread( ));

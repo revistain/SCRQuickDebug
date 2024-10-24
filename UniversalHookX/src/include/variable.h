@@ -48,6 +48,9 @@ typedef struct {
 typedef struct {
     uint32_t stack_addr;
     uint32_t stackCount;
+    uint32_t timestamp_addr;
+    uint32_t timestampCount;
+    uint32_t timestamptime_addr;
     uint32_t offset;
 } FuncTrace;
 
