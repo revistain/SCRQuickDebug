@@ -42,7 +42,7 @@ functrace_trig = EUDXVariable(EPD(functrace_stack), SetTo, 0, 0xFFFFFFFF)
 collected_functrace = []
 
 isTimeTracing = EUDLightBool()
-timestamp_stack = Db(12288)
+timestamp_stack = Db(12288) # TODO: add check
 timestamp_count = EUDVariable(0)
 timestamp_trig = EUDXVariable(EPD(timestamp_stack), SetTo, 0, 0xFFFFFFFF)
 timestamp_time = EUDXVariable(EPD(timestamp_stack), SetTo, 0, 0xFFFFFFFF)
@@ -74,7 +74,7 @@ if PushTriggerScope():
         timestamp_trig.AddDest(1),
         timestamp_time.AddDest(2),
     ])
-    return_trig << RawTrigger()
+    return_trig << RawTrigger(actions=[timestamp_trig.AddDest(1)])
 PopTriggerScope()
 
 def profile(frame, event, arg):
@@ -111,7 +111,6 @@ def profile(frame, event, arg):
 
         end_trig << NextTrigger()
         VProc([functrace_trig], [
-            timestamp_trig.AddDest(1),
             SetNextPtr(jmp_branch, end_trig),
             functrace_count.AddNumber(1),
             functrace_trig.AddDest(1),
@@ -135,10 +134,8 @@ def profile(frame, event, arg):
                 timestamp_trig.SetNumber(_self._signature_isprofiled)
             ]
         )
-
         end_trig << NextTrigger()
         DoActions(
-            timestamp_trig.AddDest(1),
             SetNextPtr(_jmp_branch, end_trig),
             functrace_count.SubtractNumber(1),
             functrace_trig.SubtractDest(1)
@@ -150,11 +147,6 @@ def _patched_EUDReturn(*args):
     if not hasattr(efn._current_compiled_func, '_signature_isprofiled'):
         return original_EUDReturn(*args)
     
-    DoActions(
-        functrace_count.SubtractNumber(1),
-        functrace_trig.SubtractDest(1)
-    )
-
     ################################################
     end_trig = Forward()
     _jmp_branch = Forward()
@@ -166,13 +158,12 @@ def _patched_EUDReturn(*args):
             timestamp_trig.SetNumber(efn._current_compiled_func._signature_isprofiled)
         ]
     )
-
     end_trig << NextTrigger()
     DoActions(
-        timestamp_trig.AddDest(1),
-        SetNextPtr(_jmp_branch, end_trig)
+        SetNextPtr(_jmp_branch, end_trig),
+        functrace_count.SubtractNumber(1),
+        functrace_trig.SubtractDest(1)
     )
-    #################################################
     original_EUDReturn(*args)
 efn.EUDFuncN._add_return = _patched_EUDReturn
 #########################################################
@@ -505,7 +496,6 @@ def process_functrace():
     saved_functrace_str_offset = len(strs)
     for functrace in collected_functrace:
         strs.append(functrace)
-    print("================ strs:", len(strs))
 
 FuncTraceDb = Forward() # Db: traceStackDb, traceCount, strs offset, timestampDb, timestampCount, timestamptimetrig
 screenDbEPD = EPD(Db(56)) # screen top, left(0 ~ 0x1FFF), selected unitindex(x12)
@@ -682,3 +672,4 @@ def afterTriggerExec():
     for garr in collected_garray:
         find_cgfw_names(garr)
     save_data()
+    

@@ -1073,7 +1073,7 @@ void StarCraft_UI( ) {
         is_flamechart_popup_open = true;
     }
     if (is_flamechart_popup_open) {
-        ImGui::SetNextWindowSize(ImVec2(500, 600));
+        ImGui::SetNextWindowSize(ImVec2(1000, 600));
     }
     if (is_flamechart_popup_open && ImGui::Begin("flamechart Inspector", &is_flamechart_popup_open, 0)) {
         ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
@@ -1086,7 +1086,7 @@ void StarCraft_UI( ) {
             ImVec2 position = ImVec2(window->DC.CursorPos.x, window->DC.CursorPos.y+ 10); // X=100, Y=100에 그리기
 
             // 사각형의 크기
-            const uint32_t item_size_x = 600;
+            const float item_size_x = 900;
             ImVec2 item_size(item_size_x, 150);
 
             // 사각형을 그릴 좌상단과 우하단 좌표
@@ -1107,35 +1107,55 @@ void StarCraft_UI( ) {
             ImGui::RenderFrame(min, max, ImGui::GetColorU32(ImGuiCol_FrameBg), true, 5.0f);
 
             Tree& tree = getTree();
+            tree.printTree(var_ptr, &tree.root);
             std::vector<TreeNode*> ftree = tree.flattenTree();
             auto& firstchilds = tree.getFirstChilds();
-            uint32_t total_time = 0;
-            for (auto& firstchild : firstchilds) {
-                if (firstchild.call_count) { total_time += firstchild.func_time / firstchild.call_count; }
+            for (auto& fc : firstchilds) {
+                // std::cout << var_ptr->strtable.str[fc.func_number] << "\n";
             }
-            const float strech_ratio = (total_time == 0) ? item_size_x : item_size_x / total_time;
+
+            const float strech_ratio = ((tree.endtime - tree.starttime) == 0) ? item_size_x : item_size_x / (tree.endtime - tree.starttime);
             float current_depth_time = 0;
             uint32_t current_depth = 0;
+            bool any_hovered = false;
             for (const auto& treenode : ftree) {
                 if (treenode->func_number == 0xEDACEDAC) continue;
                 //std::cout << "===================================\n";
                 //std::cout << treenode->func_number << " " << treenode->depth << " " << treenode->padding << " " << treenode->func_time << "\n";
                 // handle depth
-                const float blockHeight = 20;
-                float width = inner_bb.Max.x - inner_bb.Min.x;
+                const float blockHeight = 15;
+                const float width = inner_bb.Max.x - inner_bb.Min.x;
 
-                float height = blockHeight * (treenode->depth + 1) - style.FramePadding.y;
-                const float startX = treenode->padding * strech_ratio;
-                const float endX = treenode->call_count == 0 ? startX : startX + (treenode->func_time / treenode->call_count * strech_ratio);
+                const float height = blockHeight * (treenode->depth) - style.FramePadding.y;
+                const float startX = strech_ratio * treenode->padding;
+                const float endX = treenode->call_count == 0 ? startX : startX + (strech_ratio * treenode->func_current_delta);
                 auto pos0 = inner_bb.Min + ImVec2(startX, height);
                 auto pos1 = inner_bb.Min + ImVec2(endX, height + blockHeight);
+
+                auto func_text = var_ptr->strtable.str[treenode->func_number].c_str();
+                bool v_hovered = false;
+                if (ImGui::IsMouseHoveringRect(pos0, pos1))
+                {
+                    ImGui::SetTooltip("%s: delta:0x%08X padd:0x%08X depth:%d", func_text, treenode->func_current_delta, treenode->padding, treenode->depth);
+                    v_hovered = true;
+                    any_hovered = v_hovered;
+                }
                 //std::cout << startX << " " << endX << "\n";
                 //std::cout << "pos0:" << std::dec << pos0.x << " / " << pos0.y << "\n";
                 //std::cout << "pos1:" << std::dec << pos1.x << " / " << pos1.y << "\n";
                 //std::cout << "min :" << std::dec << min.x << " / " << min.y << "\n";
                 //std::cout << "max :" << std::dec << max.x << " / " << max.y << "\n";
 
-                window->DrawList->AddRectFilled(pos0, pos1, col_hovered);
+                window->DrawList->AddRectFilled(pos0, pos1, v_hovered ? col_hovered : col_base);
+                auto textSize = ImGui::CalcTextSize(func_text);
+                auto boxSize = (pos1 - pos0);
+                auto textOffset = ImVec2(0.0f, 0.0f);
+                if (textSize.x < boxSize.x)
+                {
+                    textOffset = ImVec2(0.5f, 0.5f) * (boxSize - textSize);
+                    ImGui::RenderText(pos0 + textOffset, func_text);
+                }
+                
             }
         }
         ImGui::End();

@@ -82,12 +82,12 @@ void analyzeTimeStamp(std::unique_ptr<Variables>& var_ptr) {
 	uint32_t timestampCount = dwread(ft.timestampCount);
 	// std::cout << "count: " << std::dec << timestampCount << "\n";
 	TreeNode* currentNode = &tree.root;
-	uint32_t startTime = 0;
 	for (size_t i = 0; i < timestampCount>>1; i++) {
 		uint32_t func_number = dwread(ft.timestamp_addr + 4 + 8 * i) + var_ptr->functrace.offset;
 		uint32_t func_time = dwread(ft.timestamp_addr + 4 + 8 * i + 4);
 
-		if (i == 0) startTime = func_time;
+		if (i == 0) tree.starttime = func_time;
+		else if (i == ((timestampCount >> 1) - 1)) tree.endtime = func_time;
 		if (!timestampStack.empty() && timestampStack.top().first == func_number && timestampMatch[func_number] % 2 == 1) {
 			timestampMatch[func_number] -= 1;
 			auto& popped = timestampStack.top();
@@ -100,13 +100,14 @@ void analyzeTimeStamp(std::unique_ptr<Variables>& var_ptr) {
 			timestampStack.pop();
 
 			currentNode = currentNode->parent;
-			if (!currentNode->parent) continue;
 			TreeNode* foundtreenode = currentNode->findChild(func_number);
 			if (foundtreenode) {
+				std::cout << "found: " << var_ptr->strtable.str[func_number] << "\t" << "/ start: 0x" << std::hex << func_time << " end: 0x" << popped.second << "\n";
 				if (time_delta) {
 					foundtreenode->func_time += time_delta;
+					foundtreenode->func_current_delta = time_delta;
 					foundtreenode->call_count += 1;
-					foundtreenode->padding = popped.second - startTime;
+					foundtreenode->padding = popped.second - tree.starttime;
 				}
 			}
 			else {
