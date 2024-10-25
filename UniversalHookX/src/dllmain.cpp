@@ -58,6 +58,7 @@ DWORD WINAPI callCrashMessageBox(LPVOID lpParam) {
 BOOL WINAPI HookedTerminateProcess(HANDLE hProcess, UINT uExitCode) {
     //
     std::cout << "TerminateProcess가 호출되었습니다! 종료 코드: " << uExitCode << std::endl;
+
     std::string callstack = getCallStack( );
     int result = MessageBoxA(
         NULL,                                                        // 부모 윈도우 핸들(NULL이면 최상위 윈도우)

@@ -3,7 +3,7 @@
 
 std::atomic<bool> time_running(false);
 uint32_t cycle_delay_timer = 1;
-Tree tree = Tree();
+static Tree tree = Tree();
 
 std::unique_ptr<HANDLE, void(*)(HANDLE)> phThread(
 	nullptr,
@@ -25,6 +25,10 @@ DWORD WINAPI writeSystemTime(LPVOID lpParam) {
 		dwwrite(params->address, milliseconds);
 	}
 	return 0;
+}
+
+Tree& getTree() {
+	return tree;
 }
 
 ThreadParams params;
@@ -52,7 +56,7 @@ void startTimeStamp(std::unique_ptr<Variables>& var_ptr) {
 
 void endTimeStamp(std::unique_ptr<Variables>& var_ptr) {
 	if (!phThread) return;
-	tree.printTree(var_ptr, tree.root.get());
+	tree.printTree(var_ptr, &tree.root);
 	time_running = false;
 	cycle_delay_timer = 0;
 	WaitForSingleObject(*phThread, INFINITE);
@@ -76,26 +80,34 @@ void analyzeTimeStamp(std::unique_ptr<Variables>& var_ptr) {
 
 	uint32_t stackdepth = 0;
 	uint32_t timestampCount = dwread(ft.timestampCount);
-	TreeNode* currentNode = tree.root.get();
+	// std::cout << "count: " << std::dec << timestampCount << "\n";
+	TreeNode* currentNode = &tree.root;
+	uint32_t startTime = 0;
 	for (size_t i = 0; i < timestampCount>>1; i++) {
 		uint32_t func_number = dwread(ft.timestamp_addr + 4 + 8 * i) + var_ptr->functrace.offset;
 		uint32_t func_time = dwread(ft.timestamp_addr + 4 + 8 * i + 4);
 
+		if (i == 0) startTime = func_time;
 		if (!timestampStack.empty() && timestampStack.top().first == func_number && timestampMatch[func_number] % 2 == 1) {
 			timestampMatch[func_number] -= 1;
 			auto& popped = timestampStack.top();
 			uint32_t time_delta = func_time - popped.second;
 			for (size_t i = 0; i < stackdepth; i++) {
-				//std::cout << " ";
+				// std::cout << " ";
 			}
 			stackdepth -= 1;
-			//std::cout << var_ptr->strtable.str[dwread(ft.timestamp_addr + 4 + 8 * i) + var_ptr->functrace.offset] << " / " << time_delta << "\n";
+			// std::cout << var_ptr->strtable.str[dwread(ft.timestamp_addr + 4 + 8 * i) + var_ptr->functrace.offset] << " / " << time_delta << "\n";
 			timestampStack.pop();
 
 			currentNode = currentNode->parent;
+			if (!currentNode->parent) continue;
 			TreeNode* foundtreenode = currentNode->findChild(func_number);
 			if (foundtreenode) {
-				foundtreenode->func_time += time_delta;
+				if (time_delta) {
+					foundtreenode->func_time += time_delta;
+					foundtreenode->call_count += 1;
+					foundtreenode->padding = popped.second - startTime;
+				}
 			}
 			else {
 				// this must has to be found
@@ -104,9 +116,9 @@ void analyzeTimeStamp(std::unique_ptr<Variables>& var_ptr) {
 		else {
 			stackdepth += 1;
 			for (size_t i = 0; i < stackdepth; i++) {
-				//std::cout << " ";
+				// std::cout << " ";
 			}
-			//std::cout << var_ptr->strtable.str[dwread(ft.timestamp_addr + 4 + 8 * i) + var_ptr->functrace.offset] << " / " << "input" << "\n";
+			// std::cout << var_ptr->strtable.str[dwread(ft.timestamp_addr + 4 + 8 * i) + var_ptr->functrace.offset] << " / " << "input" << "\n";
 			timestampMatch[func_number] += 1;
 			timestampStack.push(std::pair<uint32_t, uint32_t>(func_number, func_time));
 
@@ -115,8 +127,8 @@ void analyzeTimeStamp(std::unique_ptr<Variables>& var_ptr) {
 				currentNode = foundtreenode;
 			}
 			else {
-				std::shared_ptr<TreeNode> added = currentNode->addChild(currentNode, func_number, 0);
-				currentNode = added.get();
+				TreeNode* added = currentNode->addChild(currentNode, func_number, 0, stackdepth, 0);
+				currentNode = added;
 			}
 
 		}

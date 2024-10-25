@@ -126,7 +126,6 @@ std::string getCallStack() {
     return callstackString;
 }
 
-
 bool starcraft_input = true;
 static bool is_var_popup_open = false;
 static bool is_unit_popup_open = false;
@@ -141,6 +140,7 @@ GameData updateGameData( ) {
     // from eudplib
     var_ptr->update_value( );
     analyzeTimeStamp(var_ptr);
+
 
     // from process
     GameData gdata;
@@ -1077,19 +1077,66 @@ void StarCraft_UI( ) {
     }
     if (is_flamechart_popup_open && ImGui::Begin("flamechart Inspector", &is_flamechart_popup_open, 0)) {
         ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+        const ImU32 col_base = ImGui::GetColorU32(ImGuiCol_PlotHistogram) & 0x77FFFFFF;
+        const ImU32 col_hovered = ImGui::GetColorU32(ImGuiCol_PlotHistogramHovered) & 0x77FFFFFF;
+        const ImU32 col_outline_base = ImGui::GetColorU32(ImGuiCol_PlotHistogram) & 0x7FFFFFFF;
+        const ImU32 col_outline_hovered = ImGui::GetColorU32(ImGuiCol_PlotHistogramHovered) & 0x7FFFFFFF;
         {
             ImGuiWindow* window = ImGui::GetCurrentWindow();
             ImVec2 position = ImVec2(window->DC.CursorPos.x, window->DC.CursorPos.y+ 10); // X=100, Y=100에 그리기
 
             // 사각형의 크기
-            ImVec2 item_size(200, 150);
+            const uint32_t item_size_x = 600;
+            ImVec2 item_size(item_size_x, 150);
 
             // 사각형을 그릴 좌상단과 우하단 좌표
             ImVec2 min = position;                   // 좌상단 좌표
             ImVec2 max = ImVec2(position.x + item_size.x, position.y + item_size.y); // 우하단 좌표
+            ImVec2 graph_size(400, 100);
+            ImGuiContext& g = *GImGui;
+            const ImGuiStyle& style = g.Style;
 
-            // 사각형을 그린다 (프레임 색상과 둥글기 설정)
+            const ImVec2 label_size = ImGui::CalcTextSize("test", NULL, true);
+            const ImRect frame_bb(window->DC.CursorPos, window->DC.CursorPos + graph_size);
+            const ImRect inner_bb(frame_bb.Min + style.FramePadding, frame_bb.Max - style.FramePadding);
+            const ImRect total_bb(frame_bb.Min, frame_bb.Max + ImVec2(label_size.x > 0.0f ? style.ItemInnerSpacing.x + label_size.x : 0.0f, 0));
+            ImGui::ItemSize(total_bb, style.FramePadding.y);
+            if (!ImGui::ItemAdd(total_bb, 0, &frame_bb))
+                return;
+
             ImGui::RenderFrame(min, max, ImGui::GetColorU32(ImGuiCol_FrameBg), true, 5.0f);
+
+            Tree& tree = getTree();
+            std::vector<TreeNode*> ftree = tree.flattenTree();
+            auto& firstchilds = tree.getFirstChilds();
+            uint32_t total_time = 0;
+            for (auto& firstchild : firstchilds) {
+                if (firstchild.call_count) { total_time += firstchild.func_time / firstchild.call_count; }
+            }
+            const float strech_ratio = (total_time == 0) ? item_size_x : item_size_x / total_time;
+            float current_depth_time = 0;
+            uint32_t current_depth = 0;
+            for (const auto& treenode : ftree) {
+                if (treenode->func_number == 0xEDACEDAC) continue;
+                //std::cout << "===================================\n";
+                //std::cout << treenode->func_number << " " << treenode->depth << " " << treenode->padding << " " << treenode->func_time << "\n";
+                // handle depth
+                const float blockHeight = 20;
+                float width = inner_bb.Max.x - inner_bb.Min.x;
+
+                float height = blockHeight * (treenode->depth + 1) - style.FramePadding.y;
+                const float startX = treenode->padding * strech_ratio;
+                const float endX = treenode->call_count == 0 ? startX : startX + (treenode->func_time / treenode->call_count * strech_ratio);
+                auto pos0 = inner_bb.Min + ImVec2(startX, height);
+                auto pos1 = inner_bb.Min + ImVec2(endX, height + blockHeight);
+                //std::cout << startX << " " << endX << "\n";
+                //std::cout << "pos0:" << std::dec << pos0.x << " / " << pos0.y << "\n";
+                //std::cout << "pos1:" << std::dec << pos1.x << " / " << pos1.y << "\n";
+                //std::cout << "min :" << std::dec << min.x << " / " << min.y << "\n";
+                //std::cout << "max :" << std::dec << max.x << " / " << max.y << "\n";
+
+                window->DrawList->AddRectFilled(pos0, pos1, col_hovered);
+            }
         }
         ImGui::End();
     }
