@@ -261,7 +261,7 @@ void StarCraft_UI( ) {
             } else
                 is_unit_popup_open = true;
         }
-        else if (ImGui::Button("Open Call Stack")) {
+        else if (ImGui::Button("Open Callstack inspector")) {
             if (is_callstack_popup_open) {
                 ImGui::SetWindowFocus("CUnit Inspector");
             } else
@@ -1066,8 +1066,34 @@ void StarCraft_UI( ) {
         startTimeStamp(var_ptr);
     }
     if (ImGui::Button("end")) {
-        endTimeStamp();
+        endTimeStamp(var_ptr);
     }
+    static bool is_flamechart_popup_open = false;
+    if (ImGui::Button("flame")) {
+        is_flamechart_popup_open = true;
+    }
+    if (is_flamechart_popup_open) {
+        ImGui::SetNextWindowSize(ImVec2(500, 600));
+    }
+    if (is_flamechart_popup_open && ImGui::Begin("flamechart Inspector", &is_flamechart_popup_open, 0)) {
+        ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+        {
+            ImGuiWindow* window = ImGui::GetCurrentWindow();
+            ImVec2 position = ImVec2(window->DC.CursorPos.x, window->DC.CursorPos.y+ 10); // X=100, Y=100에 그리기
+
+            // 사각형의 크기
+            ImVec2 item_size(200, 150);
+
+            // 사각형을 그릴 좌상단과 우하단 좌표
+            ImVec2 min = position;                   // 좌상단 좌표
+            ImVec2 max = ImVec2(position.x + item_size.x, position.y + item_size.y); // 우하단 좌표
+
+            // 사각형을 그린다 (프레임 색상과 둥글기 설정)
+            ImGui::RenderFrame(min, max, ImGui::GetColorU32(ImGuiCol_FrameBg), true, 5.0f);
+        }
+        ImGui::End();
+    }
+    
     ImGui::End( );
     ///////////////////////////////////////////////////////////////////////////////
 }

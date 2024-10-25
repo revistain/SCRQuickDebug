@@ -3,6 +3,8 @@
 
 std::atomic<bool> time_running(false);
 uint32_t cycle_delay_timer = 1;
+Tree tree = Tree();
+
 std::unique_ptr<HANDLE, void(*)(HANDLE)> phThread(
 	nullptr,
 	[](HANDLE handle) { if (handle != nullptr) CloseHandle(handle); }
@@ -48,8 +50,9 @@ void startTimeStamp(std::unique_ptr<Variables>& var_ptr) {
 	// timeThread.join();startTimeStamp
 }
 
-void endTimeStamp() {
+void endTimeStamp(std::unique_ptr<Variables>& var_ptr) {
 	if (!phThread) return;
+	tree.printTree(var_ptr, tree.root.get());
 	time_running = false;
 	cycle_delay_timer = 0;
 	WaitForSingleObject(*phThread, INFINITE);
@@ -73,6 +76,7 @@ void analyzeTimeStamp(std::unique_ptr<Variables>& var_ptr) {
 
 	uint32_t stackdepth = 0;
 	uint32_t timestampCount = dwread(ft.timestampCount);
+	TreeNode* currentNode = tree.root.get();
 	for (size_t i = 0; i < timestampCount>>1; i++) {
 		uint32_t func_number = dwread(ft.timestamp_addr + 4 + 8 * i) + var_ptr->functrace.offset;
 		uint32_t func_time = dwread(ft.timestamp_addr + 4 + 8 * i + 4);
@@ -87,6 +91,15 @@ void analyzeTimeStamp(std::unique_ptr<Variables>& var_ptr) {
 			stackdepth -= 1;
 			//std::cout << var_ptr->strtable.str[dwread(ft.timestamp_addr + 4 + 8 * i) + var_ptr->functrace.offset] << " / " << time_delta << "\n";
 			timestampStack.pop();
+
+			currentNode = currentNode->parent;
+			TreeNode* foundtreenode = currentNode->findChild(func_number);
+			if (foundtreenode) {
+				foundtreenode->func_time += time_delta;
+			}
+			else {
+				// this must has to be found
+			}
 		}
 		else {
 			stackdepth += 1;
@@ -96,6 +109,16 @@ void analyzeTimeStamp(std::unique_ptr<Variables>& var_ptr) {
 			//std::cout << var_ptr->strtable.str[dwread(ft.timestamp_addr + 4 + 8 * i) + var_ptr->functrace.offset] << " / " << "input" << "\n";
 			timestampMatch[func_number] += 1;
 			timestampStack.push(std::pair<uint32_t, uint32_t>(func_number, func_time));
+
+			TreeNode* foundtreenode = currentNode->findChild(func_number);
+			if (foundtreenode) {
+				currentNode = foundtreenode;
+			}
+			else {
+				std::shared_ptr<TreeNode> added = currentNode->addChild(currentNode, func_number, 0);
+				currentNode = added.get();
+			}
+
 		}
 	}
 }
