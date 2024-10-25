@@ -41,18 +41,56 @@ functrace_count = EUDVariable(0)
 functrace_trig = EUDXVariable(EPD(functrace_stack), SetTo, 0, 0xFFFFFFFF)
 collected_functrace = []
 
-#########################################################
+isTimeTracing = EUDLightBool()
+timestamp_stack = Db(12288)
+timestamp_count = EUDVariable(0)
+timestamp_trig = EUDXVariable(EPD(timestamp_stack), SetTo, 0, 0xFFFFFFFF)
+timestamp_time = EUDXVariable(EPD(timestamp_stack), SetTo, 0, 0xFFFFFFFF)
+entry_trig = Forward()
+jmp_branch = Forward()
+_jmp_branch = Forward()
+return_trig = Forward()
 
-#########################################################
+### deprecated: 0x51CE8C is not refreshed in triggerloop
+# if PushTriggerScope():
+#     entry_trig << NextTrigger()
+#     VProc([timestamp_trig], [
+#         timestamp_count.AddNumber(2),
+#         timestamp_trig.AddDest(1),
+#     ])
 
-# stackdepth = 0
+#     rev_system_time = f_dwread_epd(EPD(0x51CE8C))
+#     VProc([rev_system_time, timestamp_trig], [
+#         rev_system_time.SetDest(EPD(timestamp_trig.getValueAddr())),
+#         timestamp_trig.AddDest(1),
+#     ])
+#     return_trig << RawTrigger()
+# PopTriggerScope()
+
+if PushTriggerScope():
+    entry_trig << NextTrigger()
+    VProc([timestamp_trig, timestamp_time], [
+        timestamp_count.AddNumber(2),
+        timestamp_trig.AddDest(1),
+        timestamp_time.AddDest(2),
+    ])
+    return_trig << RawTrigger()
+PopTriggerScope()
+
 def profile(frame, event, arg):
-    global stackdepth, end_trig, entry_trig, initialized
+    global stackdepth, entry_trig, jmp_branch, _jmp_branch
     if event == 'call':
         if not frame.f_code.co_filename.endswith(".eps") or frame.f_code.co_name.startswith("_"):
             return profile
+        if len(collected_functrace) == 0:
+            DoActions(
+                timestamp_count.SetNumber(0),
+                timestamp_trig.SetDest(EPD(timestamp_stack)),
+                timestamp_time.SetDest(EPD(timestamp_stack)),
+            )
+
         current_index = 0
-        lineno = frame.f_lineno - 4
+        lineno = frame.f_lineno - 3
         msg = "%s|%s|%s" % (frame.f_code.co_filename.split('TriggerEditor', 1)[-1], frame.f_code.co_name, lineno)
         if msg in collected_functrace:
             current_index = collected_functrace.index(msg)
@@ -60,39 +98,51 @@ def profile(frame, event, arg):
             collected_functrace.append(msg)
             current_index = len(collected_functrace) - 1
             
+        end_trig = Forward()
+        jmp_branch = Forward()
+        jmp_branch << RawTrigger(
+            conditions=[isTimeTracing.IsSet()],
+            actions=[
+                SetNextPtr(jmp_branch, entry_trig),
+                SetNextPtr(return_trig, end_trig),
+                timestamp_trig.SetNumber(current_index)
+            ]
+        )
+
+        end_trig << NextTrigger()
         VProc([functrace_trig], [
+            timestamp_trig.AddDest(1),
+            SetNextPtr(jmp_branch, end_trig),
             functrace_count.AddNumber(1),
             functrace_trig.AddDest(1),
             functrace_trig.SetNumber(current_index),
         ])
-
-        ################################################
-
-        #################################################
-        
-        # print(stackdepth * "    ", end="")
-        # print("* started  :", msg)
-        # stackdepth += 1
-        
-        self = frame.f_back.f_back.f_locals['self']
-        self._signature_isprofiled = True
+        _self = frame.f_back.f_back.f_locals['self']
+        _self._signature_isprofiled = current_index
     elif event == 'return':
         if not frame.f_code.co_filename.endswith(".eps") or frame.f_code.co_name.startswith("_"):
             return profile
         lineno = frame.f_lineno
-        # msg = "%s|%s|%s" % (frame.f_code.co_filename.split('TriggerEditor', 1)[-1], frame.f_code.co_name, lineno)
-        # stackdepth -= 1
-        # print(stackdepth * "    ", end="")
-        # print("* ended    :", msg)
-        
-        self = frame.f_back.f_back.f_locals['self']
-        if self._retn != None and self._retn != 0:
-            ...
-        else:
-            DoActions(
-                functrace_count.SubtractNumber(1),
-                functrace_trig.SubtractDest(1)
-            )
+
+        _self = frame.f_back.f_back.f_locals['self']
+        end_trig = Forward()
+        _jmp_branch = Forward()
+        _jmp_branch << RawTrigger(
+            conditions=[isTimeTracing.IsSet()],
+            actions=[
+                SetNextPtr(_jmp_branch, entry_trig),
+                SetNextPtr(return_trig, end_trig),
+                timestamp_trig.SetNumber(_self._signature_isprofiled)
+            ]
+        )
+
+        end_trig << NextTrigger()
+        DoActions(
+            timestamp_trig.AddDest(1),
+            SetNextPtr(_jmp_branch, end_trig),
+            functrace_count.SubtractNumber(1),
+            functrace_trig.SubtractDest(1)
+        )
     return profile
 
 original_EUDReturn = efn.EUDFuncN._add_return
@@ -104,9 +154,29 @@ def _patched_EUDReturn(*args):
         functrace_count.SubtractNumber(1),
         functrace_trig.SubtractDest(1)
     )
+
+    ################################################
+    end_trig = Forward()
+    _jmp_branch = Forward()
+    _jmp_branch << RawTrigger(
+        conditions=[isTimeTracing.IsSet()],
+        actions=[
+            SetNextPtr(_jmp_branch, entry_trig),
+            SetNextPtr(return_trig, end_trig),
+            timestamp_trig.SetNumber(efn._current_compiled_func._signature_isprofiled)
+        ]
+    )
+
+    end_trig << NextTrigger()
+    DoActions(
+        timestamp_trig.AddDest(1),
+        SetNextPtr(_jmp_branch, end_trig)
+    )
+    #################################################
     original_EUDReturn(*args)
 efn.EUDFuncN._add_return = _patched_EUDReturn
-#########################################################s
+#########################################################
+
 original_init = ev.EUDVariable.__init__
 def _patched_init(self, *args, **kwargs):
     if eudplib_type == 0:
@@ -437,7 +507,7 @@ def process_functrace():
         strs.append(functrace)
     print("================ strs:", len(strs))
 
-FuncTraceDb = Forward() # Db: traceStackDb, traceCount, strs offset
+FuncTraceDb = Forward() # Db: traceStackDb, traceCount, strs offset, timestampDb, timestampCount, timestamptimetrig
 screenDbEPD = EPD(Db(56)) # screen top, left(0 ~ 0x1FFF), selected unitindex(x12)
 mapPathDbEPD = EPD(Db(260))
 pathSignatureEPD = EPD(Db("TEMPNkdfhLpZmqWnRbZlfhInbpQYtZBwjeOqmPlW"))
@@ -471,8 +541,6 @@ def save_data():
     stringBinary += _stringBinaray
     stringDb << Db(stringBinary)
 
-    print("==-=-=-=-=-=-= len: ", len(strs))
-    
     #####
     ### variable table
     ##  4b      : VART
@@ -554,9 +622,14 @@ def save_data():
     _functraceBinary = b'\0\0\0\0'
     _functraceBinary += b'\0\0\0\0'
     _functraceBinary += struct.pack("<I", saved_functrace_str_offset)
-    act.append(SetMemoryEPD(EPD(functrace_stack), SetTo, 0xEDACEDAC))
+    _functraceBinary += b'\0\0\0\0'
+    _functraceBinary += b'\0\0\0\0'
+    _functraceBinary += b'\0\0\0\0'
     act.append(SetMemoryEPD(EPD(FuncTraceDb)+2, SetTo, functrace_stack))
     act.append(SetMemoryEPD(EPD(FuncTraceDb)+3, SetTo, functrace_count.getValueAddr()))
+    act.append(SetMemoryEPD(EPD(FuncTraceDb)+5, SetTo, timestamp_stack))
+    act.append(SetMemoryEPD(EPD(FuncTraceDb)+6, SetTo, timestamp_count.getValueAddr()))
+    act.append(SetMemoryEPD(EPD(FuncTraceDb)+7, SetTo, timestamp_time.getValueAddr()))
     
     functraceBinary = b'FTCD' + struct.pack("<I", len(_functraceBinary))
     functraceBinary += _functraceBinary
@@ -592,12 +665,14 @@ def init_signature():
 
 def onPluginStart():
     init_signature()
+    DoActions(isTimeTracing.Set())
 
 def beforeTriggerExec():
     sys.setprofile(profile)
     ...
     
 def afterTriggerExec():
+    sys.setprofile(None)
     for var in collected_vars:
         find_var_names(var)
     for arr in collected_arrays:
@@ -607,4 +682,3 @@ def afterTriggerExec():
     for garr in collected_garray:
         find_cgfw_names(garr)
     save_data()
-    sys.setprofile(None)
